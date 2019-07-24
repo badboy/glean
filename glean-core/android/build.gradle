@@ -99,7 +99,7 @@ cargo {
 
     targets = rootProject.ext.rustTargets
 
-    profile = rootProject.ext.nonMegazordProfile
+    profile = rootProject.ext.rustProfile
 
     exec = rootProject.ext.cargoExec
 

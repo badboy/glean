@@ -1,0 +1,11 @@
+[target.aarch64-linux-android.dependencies.std]
+features = []
+
+[target.armv7-linux-androideabi.dependencies.std]
+features = []
+
+[target.i686-linux-android.dependencies.std]
+features = []
+
+[target.x86_64-linux-android.dependencies.std]
+features = []
