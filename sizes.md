@@ -1,5 +1,64 @@
 # Compiled code size
 
+## Process
+
+### Glean
+
+[Glean commit: fd3be8bf0c8976cf28c11925f4611c37dda0d0a5](https://github.com/mozilla/glean/commit/72c6fe4d84d919558aea3061f541c4dae0923177)
+
+All builds for Glean itself were done using the [`build.sh`](#file-build-sh) script.
+Sizes were evaluated using the [`sizes.sh`](#file-sizes-sh) script.
+The compiled shared object library files were stripped using the `llvm-strip` binary from the installed toolchains.
+
+The configuration is described in the next section.
+Individual configuration per profile is described in each section. Changes are applied to the top-level `Cargo.toml`
+
+All Glean builds were run on my MacBook Pro.
+
+### application-services
+
+[application-services commit: 268b830baec93f4c98de544fa40c27666e6364d3](https://github.com/mozilla/application-services/commit/268b830baec93f4c98de544fa40c27666e6364d3)
+
+The plain application-services build was set up according to the instructions in [setup-android-build-environment.md](https://github.com/mozilla/application-services/blob/268b830baec93f4c98de544fa40c27666e6364d3/docs/howtos/setup-android-build-environment.md).
+
+Individual builds were done using:
+
+```
+cargo build -p megazord-full --release --target aarch64-linux-android
+cargo build -p megazord-full --release --target armv7-linux-androideabi
+```
+
+For including Glean in the megazord build it was added as a path dependency:
+
+```patch
+diff --git i/megazords/full/Cargo.toml w/megazords/full/Cargo.toml
+index 4333bb68..d84a78d8 100644
+--- i/megazords/full/Cargo.toml
++++ w/megazords/full/Cargo.toml
+@@ -15,4 +15,5 @@ places-ffi = { path = "../../components/places/ffi" }
+ push-ffi = { path = "../../components/push/ffi" }
+ rc_log_ffi = { path = "../../components/rc_log" }
+ viaduct = { path = "../../components/viaduct", default_features = false }
++glean_ffi = { path = "../../../glean.rs" }
+ lazy_static = "1.3.0"
+diff --git i/megazords/full/src/lib.rs w/megazords/full/src/lib.rs
+index 5ad15bcf..b656918f 100644
+--- i/megazords/full/src/lib.rs
++++ w/megazords/full/src/lib.rs
+@@ -14,6 +14,7 @@ pub use places_ffi;
+ pub use push_ffi;
+ pub use rc_log_ffi;
+ pub use viaduct;
++pub use glean_ffi;
+
+ /// In order to support the use case of consumers who don't know about megazords
+ /// and don't need our e.g. networking or logging, we consider initialization
+```
+
+Sizes were evaluated after applying `aarch64-linux-android-strip` to the resulting `libmegazord.so`.
+
+All application-services builds were run in a Ubuntu 18.04 VM.
+
 ## General config
 
 Versions:
@@ -127,6 +186,8 @@ panic = "abort"
 
 ## xargo on Rust nightly
 
+In the `build.sh` `cargo` is replaced by `xargo`. The debug build is disabled. `RUSTUP_TOOLCHAIN=nightly` is set to enforce the nightly compiler.
+
 `Xargo.toml`:
 
 ```toml
@@ -162,6 +223,8 @@ panic = "abort"
 | x86_64-linux-android | release (stripped) | 2091048 | 1.9941788 |
 
 ## xargo with LTO on Rust nightly
+
+In the `build.sh` `cargo` is replaced by `xargo`. The debug build is disabled. `RUSTUP_TOOLCHAIN=nightly` is set to enforce the nightly compiler.
 
 `Xargo.toml`:
 
