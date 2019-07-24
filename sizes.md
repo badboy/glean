@@ -197,3 +197,14 @@ lto = true
 | i686-linux-android | release (stripped) | 2008420 | 1.9153786 |
 | x86_64-linux-android | release | 2519592 | 2.4028702 |
 | x86_64-linux-android | release (stripped) | 2095144 | 1.998085 |
+
+## application-services
+
+Default release build with and without Glean.
+
+| Target | Build type | Size in bytes | Size in megabytes |
+|---|---|---|---|
+| aarch64-linux-android | master | 7746440 | 7.3875809 |
+| aarch64-linux-android | with-glean | 8484800 | 8.091758 |
+| armv7-linux-androideabi | master | 6897480 | 6.5779495 |
+| armv7-linux-androideabi | with-glean | 7819184 | 7.456955 |
