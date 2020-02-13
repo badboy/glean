@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::borrow::Cow;
 use std::convert::TryFrom;
 
 use crate::error::{Error, ErrorKind};
@@ -55,11 +56,11 @@ impl TryFrom<i32> for Lifetime {
 #[derive(Default, Debug, Clone)]
 pub struct CommonMetricData {
     /// The metric's name.
-    pub name: String,
+    pub name: Cow<'static, str>,
     /// The metric's category.
-    pub category: String,
+    pub category: Cow<'static, str>,
     /// List of ping names to include this metric in.
-    pub send_in_pings: Vec<String>,
+    pub send_in_pings: Vec<Cow<'static, str>>,
     /// The metric's lifetime.
     pub lifetime: Lifetime,
     /// Whether or not the metric is disabled.
@@ -70,12 +71,16 @@ pub struct CommonMetricData {
     /// When a LabeledMetric<T> factory creates the specific metric to be
     /// recorded to, dynamic labels are stored in the specific label so that we
     /// can validate them when the Glean singleton is available.
-    pub dynamic_label: Option<String>,
+    pub dynamic_label: Option<Cow<'static, str>>,
 }
 
 impl CommonMetricData {
     /// Create a new metadata object.
-    pub fn new<A: Into<String>, B: Into<String>, C: Into<String>>(
+    pub fn new<
+        A: Into<Cow<'static, str>>,
+        B: Into<Cow<'static, str>>,
+        C: Into<Cow<'static, str>>,
+    >(
         category: A,
         name: B,
         ping_name: C,
@@ -92,11 +97,11 @@ impl CommonMetricData {
     ///
     /// If `category` is empty, it's ommitted.
     /// Otherwise, it's the combination of the metric's `category` and `name`.
-    pub(crate) fn base_identifier(&self) -> String {
+    pub(crate) fn base_identifier(&self) -> Cow<'_, str> {
         if self.category.is_empty() {
             self.name.clone()
         } else {
-            format!("{}.{}", self.category, self.name)
+            format!("{}.{}", self.category, self.name).into()
         }
     }
 
@@ -104,11 +109,11 @@ impl CommonMetricData {
     ///
     /// If `category` is empty, it's ommitted.
     /// Otherwise, it's the combination of the metric's `category`, `name` and `label`.
-    pub(crate) fn identifier(&self, glean: &Glean) -> String {
+    pub(crate) fn identifier(&self, glean: &Glean) -> Cow<'_, str> {
         let base_identifier = self.base_identifier();
 
         if let Some(label) = &self.dynamic_label {
-            dynamic_label(glean, self, &base_identifier, label)
+            dynamic_label(glean, self, &base_identifier, label).into()
         } else {
             base_identifier
         }
@@ -120,7 +125,7 @@ impl CommonMetricData {
     }
 
     /// The list of storages this metric should be recorded into.
-    pub fn storage_names(&self) -> &[String] {
+    pub fn storage_names(&self) -> &[Cow<'_, str>] {
         &self.send_in_pings
     }
 }

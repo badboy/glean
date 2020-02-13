@@ -67,7 +67,7 @@ mod linear {
     #[test]
     fn set_value_properly_sets_the_value_in_all_stores() {
         let (glean, _t) = new_glean(None);
-        let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+        let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
         let metric = CustomDistributionMetric::new(
             CommonMetricData {
@@ -280,7 +280,7 @@ mod exponential {
     #[test]
     fn set_value_properly_sets_the_value_in_all_stores() {
         let (glean, _t) = new_glean(None);
-        let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+        let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
         let metric = CustomDistributionMetric::new(
             CommonMetricData {

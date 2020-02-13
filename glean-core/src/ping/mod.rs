@@ -51,7 +51,7 @@ impl PingMaker {
     pub(super) fn get_ping_seq(&self, glean: &Glean, storage_name: &str) -> usize {
         // Sequence numbers are stored as a counter under a name that includes the storage name
         let seq = CounterMetric::new(CommonMetricData {
-            name: format!("{}#sequence", storage_name),
+            name: format!("{}#sequence", storage_name).into(),
             // We don't need a category, the name is already unique
             category: "".into(),
             send_in_pings: vec![INTERNAL_STORAGE.into()],
@@ -80,7 +80,7 @@ impl PingMaker {
 
         let start_time = DatetimeMetric::new(
             CommonMetricData {
-                name: format!("{}#start", storage_name),
+                name: format!("{}#start", storage_name).into(),
                 category: "".into(),
                 send_in_pings: vec![INTERNAL_STORAGE.into()],
                 lifetime: Lifetime::User,

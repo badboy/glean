@@ -78,7 +78,7 @@ fn stringlist_serializer_should_correctly_serialize_stringlists() {
 #[test]
 fn set_properly_sets_the_value_in_all_stores() {
     let (glean, _t) = new_glean(None);
-    let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+    let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
     let metric = StringListMetric::new(CommonMetricData {
         name: "string_list_metric".into(),
@@ -192,7 +192,7 @@ fn string_lists_dont_exceed_max_items() {
         metric.add(&glean, "test_string");
     }
 
-    let expected: Vec<String> = "test_string "
+    let expected: Vec<_> = "test_string "
         .repeat(20)
         .split_whitespace()
         .map(|s| s.to_string())
@@ -210,7 +210,7 @@ fn string_lists_dont_exceed_max_items() {
     );
 
     // Try to set it to a list that's too long. Ensure it cuts off at 20 elements.
-    let too_many: Vec<String> = "test_string "
+    let too_many: Vec<_> = "test_string "
         .repeat(21)
         .split_whitespace()
         .map(|s| s.to_string())

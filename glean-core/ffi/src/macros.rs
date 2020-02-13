@@ -70,9 +70,9 @@ macro_rules! define_metric {
                 )*
 
                 Ok(glean_core::metrics::$metric_type::new(glean_core::CommonMetricData {
-                    name,
-                    category,
-                    send_in_pings,
+                    name: name.into(),
+                    category: category.into(),
+                    send_in_pings: send_in_pings.into_iter().map(|s| s.into()).collect(),
                     lifetime,
                     disabled: disabled != 0,
                     ..Default::default()

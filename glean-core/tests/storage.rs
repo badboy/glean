@@ -40,7 +40,7 @@ fn can_snapshot() {
 #[test]
 fn snapshot_correctly_clears_the_stores() {
     let (glean, _t) = new_glean(None);
-    let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+    let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
     let metric = CounterMetric::new(CommonMetricData {
         name: "metric".into(),

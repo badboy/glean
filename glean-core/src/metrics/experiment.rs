@@ -93,7 +93,7 @@ impl ExperimentMetric {
 
         let new_experiment = Self {
             meta: CommonMetricData {
-                name: format!("{}#experiment", truncated_id),
+                name: format!("{}#experiment", truncated_id).into(),
                 // We don't need a category, the name is already unique
                 category: "".into(),
                 send_in_pings: vec![INTERNAL_STORAGE.into()],

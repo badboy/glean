@@ -73,13 +73,13 @@ fn get_error_metric_for_metric(meta: &CommonMetricData, error: ErrorType) -> Cou
 
     // Record errors in the pings the metric is in, as well as the metrics ping.
     let mut send_in_pings = meta.send_in_pings.clone();
-    let ping_name = "metrics".to_string();
+    let ping_name = "metrics".into();
     if !send_in_pings.contains(&ping_name) {
         send_in_pings.push(ping_name);
     }
 
     CounterMetric::new(CommonMetricData {
-        name: combine_base_identifier_and_label(error.as_str(), name),
+        name: combine_base_identifier_and_label(error.as_str(), name).into(),
         category: "glean.error".into(),
         lifetime: Lifetime::Ping,
         send_in_pings,

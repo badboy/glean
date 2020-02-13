@@ -42,9 +42,9 @@ pub extern "C" fn glean_new_event_metric(
 
         Ok(EventMetric::new(
             CommonMetricData {
-                name,
-                category,
-                send_in_pings,
+                name: name.into(),
+                category: category.into(),
+                send_in_pings: send_in_pings.into_iter().map(|s| s.into()).collect(),
                 lifetime,
                 disabled: disabled != 0,
                 ..Default::default()

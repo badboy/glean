@@ -149,11 +149,8 @@ fn snapshot_correctly_clears_the_stores() {
 fn test_sending_of_event_ping_when_it_fills_up() {
     let (mut glean, _t) = new_glean(None);
 
-    let store_names: Vec<String> = vec!["events".into()];
-
-    for store_name in &store_names {
-        glean.register_ping_type(&PingType::new(store_name.clone(), true, false, vec![]));
-    }
+    let store_names: Vec<_> = vec!["events".into()];
+    glean.register_ping_type(&PingType::new("events", true, false, vec![]));
 
     let click = EventMetric::new(
         CommonMetricData {
@@ -201,7 +198,7 @@ fn test_sending_of_event_ping_when_it_fills_up() {
 fn extra_keys_must_be_recorded_and_truncated_if_needed() {
     let (glean, _t) = new_glean(None);
 
-    let store_names: Vec<String> = vec!["store1".into()];
+    let store_names: Vec<_> = vec!["store1".into()];
 
     let test_event = EventMetric::new(
         CommonMetricData {

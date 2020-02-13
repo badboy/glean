@@ -62,7 +62,7 @@ fn string_serializer_should_correctly_serialize_strings() {
 #[test]
 fn set_properly_sets_the_value_in_all_stores() {
     let (glean, _t) = new_glean(None);
-    let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+    let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
     let metric = StringMetric::new(CommonMetricData {
         name: "string_metric".into(),

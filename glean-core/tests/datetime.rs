@@ -70,7 +70,7 @@ fn datetime_serializer_should_correctly_serialize_datetime() {
 #[test]
 fn set_value_properly_sets_the_value_in_all_stores() {
     let (glean, _t) = new_glean(None);
-    let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
+    let store_names: Vec<_> = vec!["store1".into(), "store2".into()];
 
     let metric = DatetimeMetric::new(
         CommonMetricData {
@@ -166,7 +166,7 @@ fn test_that_truncation_works() {
     for t in test_cases {
         let metric = DatetimeMetric::new(
             CommonMetricData {
-                name: format!("datetime_metric_{}", t.case_name),
+                name: format!("datetime_metric_{}", t.case_name).into(),
                 category: "telemetry".into(),
                 send_in_pings: vec![store_name.into()],
                 disabled: false,
