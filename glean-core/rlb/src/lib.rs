@@ -49,6 +49,7 @@ pub use glean_core::{global_glean, setup_glean, CommonMetricData, Error, Glean, 
 mod configuration;
 mod core_metrics;
 mod dispatcher;
+mod glean_metrics;
 pub mod private;
 mod system;
 
@@ -165,16 +166,16 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
             // TODO Bug 1672956 will decide where to set this flag again.
             let dirty_flag = glean.is_dirty_flag_set();
             glean.set_dirty_flag(false);
-/*
 
             // Register builtin pings.
-            // Unfortunately we need to manually list them here to guarantee they are registered synchronously
-            // before we need them.
-            // We don't need to handle the deletion-request ping. It's never touched from the language implementation.
-            LibGleanFFI.INSTANCE.glean_register_ping_type(Pings.baseline.handle)
-            LibGleanFFI.INSTANCE.glean_register_ping_type(Pings.metrics.handle)
-            LibGleanFFI.INSTANCE.glean_register_ping_type(Pings.events.handle)
-
+            // Unfortunately we need to manually list them here to guarantee
+            // they are registered synchronously before we need them.
+            // We don't need to handle the deletion-request ping. It's never touched
+            // from the language implementation.
+            glean.register_ping_type(&glean_metrics::pings::baseline.ping_type);
+            glean.register_ping_type(&glean_metrics::pings::metrics.ping_type);
+            glean.register_ping_type(&glean_metrics::pings::events.ping_type);
+/*
             // If any pings were registered before initializing, do so now.
             // We're not clearing this queue in case Glean is reset by tests.
             synchronized(this@GleanInternalAPI) {
