@@ -123,7 +123,10 @@ where
 /// * `client_info` - the `ClientInfoMetrics` values used to set Glean
 ///   core metrics.
 pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
-    dispatcher::launch(move || {
+    println!("*** DEBUG - Pre launch init");
+
+    std::thread::spawn(move || {
+        println!("*** DEBUG - init");
         let core_cfg = glean_core::Configuration {
             upload_enabled: cfg.upload_enabled,
             data_path: cfg.data_path.clone(),
@@ -224,10 +227,13 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
                 initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
             }
 
+            println!("*** DEBUG - Pre dispatch flush");
+
             // Signal Dispatcher that init is complete
             if let Err(err) = dispatcher::flush_init() {
                 log::error!("Unable to flush the preinit queue: {}", err);
             }
+            println!("*** DEBUG - Post  dispatch flush");
         });
     });
 
@@ -308,13 +314,6 @@ pub fn set_upload_enabled(enabled: bool) {
             // TODO: trigger upload for the deletion-ping. Will happen in bug 1672952.
         });
     });
-}
-
-/// Determines whether upload is enabled.
-///
-/// See `glean_core::Glean.is_upload_enabled`.
-pub fn is_upload_enabled() -> bool {
-    with_glean(|glean| glean.is_upload_enabled())
 }
 
 /// Register a new [`PingType`](metrics/struct.PingType.html).

@@ -250,6 +250,7 @@ impl Dispatcher {
     ///
     /// Returns an error if called multiple times.
     pub fn flush_init(&mut self) -> Result<(), DispatchError> {
+        println!("**** DEBUG calling dispatcher's flush_init");
         // We immediately stop queueing in the pre-init buffer.
         let old_val = self.queue_preinit.swap(false, Ordering::SeqCst);
         if !old_val {

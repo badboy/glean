@@ -57,6 +57,7 @@ pub fn block_on_queue() {
 /// This function blocks until queued tasks prior to this call are finished.
 /// Once the initial queue is empty the dispatcher will wait for new tasks to be launched.
 pub fn flush_init() -> Result<(), DispatchError> {
+    println!("**** DEBUG calling global flush_init");
     GLOBAL_DISPATCHER
         .write()
         .unwrap()
