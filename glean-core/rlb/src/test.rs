@@ -27,7 +27,7 @@ fn new_glean() -> tempfile::TempDir {
         channel: Some("testing".into()),
     };
 
-    initialize(cfg, ClientInfoMetrics::unknown()).unwrap();
+    initialize(cfg, ClientInfoMetrics::unknown());
     dir
 }
 
