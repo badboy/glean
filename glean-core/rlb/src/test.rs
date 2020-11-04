@@ -56,7 +56,7 @@ fn send_a_ping() {
         sender: crossbeam_channel::Sender<String>
     };
     impl net::PingUploader for FakeUploader {
-        fn upload(&self, url: String, _body: Vec<u8>, _headers: Vec<(String, String)>) -> net::UploadResult 
+        fn upload(&self, url: String, _body: Vec<u8>, _headers: Vec<(String, String)>) -> net::UploadResult
         {
             self.sender.send(url).unwrap();
             net::UploadResult::HttpStatus(200)
@@ -85,7 +85,7 @@ fn send_a_ping() {
     const PING_NAME: &str = "test-ping";
     let custom_ping = private::PingType::new(PING_NAME, true, true, vec![]);
     custom_ping.submit(None);
-    
+
     // Wait for the ping to arrive.
     let url = r.recv().unwrap();
     assert_eq!(url.contains(PING_NAME), true);
