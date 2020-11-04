@@ -38,7 +38,7 @@ fn new_glean(configuration: Option<Configuration>) -> tempfile::TempDir {
         }
     };
 
-    initialize(cfg, ClientInfoMetrics::unknown());
+    crate::reset_glean(cfg, ClientInfoMetrics::unknown(), true);
     dir
 }
 
@@ -160,10 +160,12 @@ fn initialize_must_not_crash_if_data_dir_is_messed_up() {
         uploader: None
     };
 
-    initialize(cfg, ClientInfoMetrics::unknown());
-
-    // TODO: is this test working? is it waiting for init to finish?
-    dispatcher::block_on_queue();
+    reset_glean(cfg, ClientInfoMetrics::unknown(), false);
+    // Glean init is async and, for this test, it bails out early due to
+    // an error: we can do nothing but wait. Tests in other bindings use
+    // the dispatcher's test mode, which runs tasks sequentially on the main
+    // thread, so no sleep is required. Bug 1675215 might fix this, as well.
+    std::thread::sleep(std::time::Duration::from_secs(3));
 }
 
 #[test]
@@ -174,10 +176,13 @@ fn queued_recorded_metrics_correctly_record_during_init() {
 
 #[test]
 fn initializing_twice_is_a_noop() {
+    let _lock = GLOBAL_LOCK.lock().unwrap();
+    env_logger::try_init().ok();
+
     let dir = tempfile::tempdir().unwrap();
     let tmpname = dir.path().display().to_string();
 
-    initialize(Configuration {
+    reset_glean(Configuration {
         data_path: tmpname.clone().into(),
         application_id: GLOBAL_APPLICATION_ID.into(),
         upload_enabled: true,
@@ -186,9 +191,15 @@ fn initializing_twice_is_a_noop() {
         channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: None
-    }, ClientInfoMetrics::unknown());
+    }, ClientInfoMetrics::unknown(), true);
 
-    initialize(Configuration {
+    // Glean init is async and we need to wait for it to complete. There
+    // is nothing we can do but wait. Tests in other bindings use
+    // the dispatcher's test mode, which runs tasks sequentially on the main
+    // thread, so no sleep is required. Bug 1675215 might fix this, as well.
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    reset_glean(Configuration {
         data_path: tmpname,
         application_id: GLOBAL_APPLICATION_ID.into(),
         upload_enabled: true,
@@ -197,7 +208,13 @@ fn initializing_twice_is_a_noop() {
         channel: Some("testing".into()),
         server_endpoint: Some("invalid-test-host".into()),
         uploader: None
-    }, ClientInfoMetrics::unknown());
+    }, ClientInfoMetrics::unknown(), false);
+
+    // Glean init is async and, for this test, it bails out early due to
+    // being initialized: we can do nothing but wait. Tests in other bindings use
+    // the dispatcher's test mode, which runs tasks sequentially on the main
+    // thread, so no sleep is required. Bug 1675215 might fix this, as well.
+    std::thread::sleep(std::time::Duration::from_secs(3));
 }
 
 #[test]
