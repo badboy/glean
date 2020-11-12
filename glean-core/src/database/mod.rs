@@ -1202,4 +1202,74 @@ mod test {
             },
         );
     }
+
+    mod rkv_changes {
+        use std::env;
+        use std::time::Duration;
+
+        use super::*;
+        use crate::histogram::Histogram;
+        use crate::metrics::{Metric::*, RecordedExperimentData, TimeUnit};
+
+        fn all_metrics() -> Vec<(&'static str, Metric)> {
+            let datetime = vec![
+                4, 0, 0, 0, 35, 0, 0, 0, 0, 0, 0, 0, 50, 48, 49, 52, 45, 49, 49, 45, 50, 56, 84,
+                50, 49, 58, 52, 53, 58, 53, 57, 46, 48, 48, 48, 48, 48, 48, 48, 49, 50, 43, 48, 57,
+                58, 48, 48, 3, 0, 0, 0,
+            ];
+            let datetime = bincode::deserialize(&datetime).unwrap();
+            return vec![
+                ("bool", Boolean(false)),
+                ("counter", Counter(0)),
+                ("custom.dist.exp", CustomDistributionExponential(Histogram::exponential(1, 500, 10))),
+                ("custom.dist.lin", CustomDistributionLinear(Histogram::linear(1, 500, 10))),
+                ("datetime", datetime),
+                ("experiment", Experiment(RecordedExperimentData { branch: "branch".into(), extra: None, })),
+                ("quantity", Quantity(0)),
+                ("string", String("glean".into())),
+                ("string.list", StringList(vec!["glean".into()])),
+                ("uuid", Uuid("082c3e52-0a18-11ea-946f-0fe0c98c361c".into())),
+                ("timespan", Timespan(Duration::new(5, 0), TimeUnit::Second)),
+                ("timing.dist", TimingDistribution(Histogram::functional(2.0, 8.0))),
+                ("memory.dist", MemoryDistribution(Histogram::functional(2.0, 8.0))),
+                ("jwe", Jwe("eyJhbGciOiJSU0EtT0FFUCIsImVuYyI6IkEyNTZHQ00ifQ.OKOawDo13gRp2ojaHV7LFpZcgV7T6DVZKTyKOMTYUmKoTCVJRgckCL9kiMT03JGeipsEdY3mx_etLbbWSrFr05kLzcSr4qKAq7YN7e9jwQRb23nfa6c9d-StnImGyFDbSv04uVuxIp5Zms1gNxKKK2Da14B8S4rzVRltdYwam_lDp5XnZAYpQdb76FdIKLaVmqgfwX7XWRxv2322i-vDxRfqNzo_tETKzpVLzfiwQyeyPGLBIO56YJ7eObdv0je81860ppamavo35UgoRdbYaBcoh9QcfylQr66oc6vFWXRcZ_ZT2LawVCWTIy3brGPi6UklfCpIMfIjf7iGdXKHzg.48V1_ALb6US04U3b.5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6jiSdiwkIr3ajwQzaBtQD_A.XFBoMYUZodetZdvTiFvSkQ".into())),
+            ];
+        }
+
+        #[test]
+        #[ignore]
+        fn write_with_features() {
+            let database_path = env::var("DATABASE_DIR").expect("DATABASE_DIR");
+
+            let db = Database::new(&database_path, false).unwrap();
+
+            let all_metrics = all_metrics();
+            for (name, metric) in &all_metrics {
+                db.record_per_lifetime(Lifetime::Ping, "store1", name, metric)
+                    .unwrap();
+            }
+        }
+
+        #[test]
+        #[ignore]
+        fn read() {
+            let database_path = env::var("DATABASE_DIR").expect("DATABASE_DIR");
+
+            let db = Database::new(&database_path, false).unwrap();
+
+            let mut db_metrics: Vec<(std::string::String, Metric)> = vec![];
+            let mut snapshotter = |name: &[u8], metric: &Metric| {
+                let name = str::from_utf8(name).unwrap().to_string();
+                db_metrics.push((name, metric.clone()));
+            };
+            db.iter_store_from(Lifetime::Ping, "store1", None, &mut snapshotter);
+
+            let all_metrics = all_metrics();
+            assert_eq!(all_metrics.len(), db_metrics.len());
+            for (name, metric) in &all_metrics {
+                let db_metric = db_metrics.iter().find(|m| &m.0 == name).unwrap();
+                assert_eq!(metric, &db_metric.1);
+            }
+        }
+    }
 }
