@@ -11,10 +11,7 @@
 
 
 
-#include <stdarg.h>
-#include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 
 /**
  * A recoverable error.
@@ -314,6 +311,7 @@ typedef uint64_t TimerId;
  */
 void glean_enable_logging(void);
 
+#if (!defined(DEFINE_ANDROID) && !defined(DEFINE_IOS))
 /**
  * Initialize the logging system to send JSON messages to a file descriptor
  * (Unix) or file handle (Windows).
@@ -327,6 +325,7 @@ void glean_enable_logging(void);
  * descriptor (Unix) or file handle (Windows) without any checking.
  */
 void glean_enable_logging_to_fd(uint64_t fd);
+#endif
 
 /**
  * # Safety
@@ -523,7 +522,7 @@ uint64_t glean_new_event_metric(FfiStr category,
                                 FfiStr name,
                                 RawStringArray send_in_pings,
                                 int32_t send_in_pings_len,
-                                int32_t lifetime,
+                                Lifetime lifetime,
                                 uint8_t disabled,
                                 RawStringArray extra_keys,
                                 int32_t extra_keys_len);
@@ -575,7 +574,7 @@ uint64_t glean_new_labeled_counter_metric(FfiStr category,
                                           FfiStr name,
                                           RawStringArray send_in_pings,
                                           int32_t send_in_pings_len,
-                                          int32_t lifetime,
+                                          Lifetime lifetime,
                                           uint8_t disabled,
                                           RawStringArray labels,
                                           int32_t label_count);
@@ -598,7 +597,7 @@ uint64_t glean_new_labeled_boolean_metric(FfiStr category,
                                           FfiStr name,
                                           RawStringArray send_in_pings,
                                           int32_t send_in_pings_len,
-                                          int32_t lifetime,
+                                          Lifetime lifetime,
                                           uint8_t disabled,
                                           RawStringArray labels,
                                           int32_t label_count);
@@ -621,7 +620,7 @@ uint64_t glean_new_labeled_string_metric(FfiStr category,
                                          FfiStr name,
                                          RawStringArray send_in_pings,
                                          int32_t send_in_pings_len,
-                                         int32_t lifetime,
+                                         Lifetime lifetime,
                                          uint8_t disabled,
                                          RawStringArray labels,
                                          int32_t label_count);

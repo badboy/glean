@@ -12,6 +12,8 @@ header = """/* This Source Code Form is subject to the terms of the Mozilla Publ
 """
 
 language = "C"
+no_includes = true
+sys_includes = ["stdint.h"]
 
 [parse.expand]
 crates = ["glean-ffi"]
@@ -22,3 +24,7 @@ include = ["glean-core", "ffi-support"]
 
 [enum]
 prefix_with_name = true
+
+[defines]
+"target_os = android" = "DEFINE_ANDROID"
+"target_os = ios" = "DEFINE_IOS"
