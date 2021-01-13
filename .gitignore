@@ -1,7 +1,7 @@
-docs/book
-docs/appendix/changelog.md
+/src/docs/book
+/src/docs/appendix/changelog.md
 target
-.cargo
+/.cargo
 
 # Android stuff.
 *.iml
@@ -15,10 +15,10 @@ captures
 # iOS stuff.
 xcuserdata
 raw_xcode*log
-/glean-core/ios/Glean/Generated
-/glean-core/ios/Pipfile
-/glean-core/ios/Pipfile.lock
-/glean-core/ios/.venv
+/bindings/ios/Glean/Generated
+/bindings/ios/Pipfile
+/bindings/ios/Pipfile.lock
+/bindings/ios/.venv
 
 # Carthage build artifacts
 Cartfile.resolved
@@ -36,26 +36,25 @@ dist/
 *.suo
 *.user
 *.pubxml
-/glean-core/csharp/*/bin/
-/glean-core/csharp/*/obj/
-/glean-core/csharp/.vs/
+/bindings/csharp/*/bin/
+/bindings/csharp/*/obj/
+/bindings/csharp/.vs/
 # The 'build' dir is generally disallowed,
 # but we need to allow it here to enable our
 # csharp custom task.
-!/glean-core/csharp/Glean/build/
-/glean-core/csharp/Glean/.venv/
-/samples/csharp/bin/
-/samples/csharp/obj/
-/samples/csharp/.vs/
-/samples/csharp/.venv/
+!/bindings/csharp/Glean/build/
+/bindings/csharp/Glean/.venv/
+/src/samples/csharp/bin/
+/src/samples/csharp/obj/
+/src/samples/csharp/.vs/
+/src/samples/csharp/.venv/
 
 # local stuff
 data/
-glean-core/data
 glean_app*
 !glean_app.c
 
-samples/ios/app/.venv/
+src/samples/ios/app/.venv/
 .mypy_cache/
 .coverage
 htmlcov/
