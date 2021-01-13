@@ -15,10 +15,10 @@ captures
 # iOS stuff.
 xcuserdata
 raw_xcode*log
-/bindings/ios/Glean/Generated
-/bindings/ios/Pipfile
-/bindings/ios/Pipfile.lock
-/bindings/ios/.venv
+/bindings/swift/Glean/Generated
+/bindings/swift/Pipfile
+/bindings/swift/Pipfile.lock
+/bindings/swift/.venv
 
 # Carthage build artifacts
 Cartfile.resolved
