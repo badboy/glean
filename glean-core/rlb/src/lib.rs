@@ -379,6 +379,14 @@ pub fn shutdown() {
 pub extern "C" fn rlb_flush_dispatcher() {
     log::trace!("FLushing RLB dispatcher through the FFI");
 
+    #[cfg(feature = "glean-dynamic")]
+    {
+        if sys::global_glean_sys().is_none() {
+            sys::NEEDS_FLUSH.store(true, Ordering::SeqCst);
+            return;
+        }
+    }
+
     let was_initialized = was_initialize_called();
 
     // Panic in debug mode
@@ -777,7 +785,7 @@ pub fn setup_dynamic_glean(libname: &str) -> ::std::result::Result<(), ::libload
     log::info!("Setting up dynamic Glean.");
     sys::setup_glean(libname)?;
 
-    log::info!("Glean is all setup to run dynamically. The other side needs to flush the dispatcher.");
+    log::info!("Glean is all setup to run dynamically.");
 
     Ok(())
 }
