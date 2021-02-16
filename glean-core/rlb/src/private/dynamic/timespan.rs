@@ -2,6 +2,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::sync::atomic::{AtomicU64, Ordering::SeqCst};
+use std::sync::Arc;
+
 use glean_core::{ErrorType, metrics::TimeUnit};
 use inherent::inherent;
 
@@ -9,12 +12,19 @@ use crate::{dispatcher, new_metric};
 
 /// Timespan metric wrapper around the FFI implementation
 #[derive(Clone)]
-pub struct TimespanMetric(pub(crate) u64);
+pub struct TimespanMetric(Arc<AtomicU64>);
 
 impl TimespanMetric {
     /// The public constructor used by automatically generated metrics.
     pub fn new(meta: glean_core::CommonMetricData, time_unit: TimeUnit) -> Self {
-        let metric = new_metric!(glean_new_timespan_metric, meta, time_unit as i32);
+        let metric = Arc::new(AtomicU64::new(0));
+
+        let deferred = Arc::clone(&metric);
+        dispatcher::launch(move || {
+            let metric = new_metric!(glean_new_timespan_metric, meta, time_unit as i32);
+            deferred.store(metric, SeqCst);
+        });
+
         Self(metric)
     }
 }
@@ -24,8 +34,9 @@ impl glean_core::traits::Timespan for TimespanMetric {
     fn start(&self) {
         let start_time = time::precise_time_ns();
 
-        let id = self.0;
+        let id = Arc::clone(&self.0);
         dispatcher::launch(move || {
+            let id = id.load(SeqCst);
             crate::sys::with_glean(|glean| unsafe { glean.glean_timespan_set_start(id, start_time) });
         });
     }
@@ -33,15 +44,17 @@ impl glean_core::traits::Timespan for TimespanMetric {
     fn stop(&self) {
         let stop_time = time::precise_time_ns();
 
-        let id = self.0;
+        let id = Arc::clone(&self.0);
         dispatcher::launch(move || {
+            let id = id.load(SeqCst);
             crate::sys::with_glean(|glean| unsafe { glean.glean_timespan_set_stop(id, stop_time) });
         });
     }
 
     fn cancel(&self) {
-        let id = self.0;
+        let id = Arc::clone(&self.0);
         dispatcher::launch(move || {
+            let id = id.load(SeqCst);
             crate::sys::with_glean(|glean| unsafe { glean.glean_timespan_cancel(id) });
         });
     }
