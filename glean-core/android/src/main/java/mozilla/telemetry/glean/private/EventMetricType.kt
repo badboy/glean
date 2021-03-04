@@ -112,7 +112,7 @@ class EventMetricType<ExtraKeysEnum : Enum<ExtraKeysEnum>> internal constructor(
 
         // We capture the event time now, since we don't know when the async code below
         // might get executed.
-        val timestamp = SystemClock.elapsedRealtime()
+        val timestamp = LibGleanFFI.INSTANCE.glean_get_timestamp_ms()
 
         @Suppress("EXPERIMENTAL_API_USAGE")
         Dispatchers.API.launch {
