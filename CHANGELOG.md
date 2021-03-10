@@ -12,6 +12,12 @@
   * Update minimal required version of `cffi` dependency to 1.13.0 ([#1520](https://github.com/mozilla/glean/pull/1520)).
 * RLB
   * Added `rate` metric type ([#1516](https://github.com/mozilla/glean/pull/1516)).
+  * Expose a function `get_timestamp_ms` to get a timestamp from a monotonic clock on all supported operating systems, to be used for event timestamps.
+* iOS
+  * **Breaking Change**: Event timestamps are now correctly recorded in milliseconds.
+    * Since the first release event timestamps were erroneously recorded with nanosecond precision.
+      This is now fixed and event timestamps are in milliseconds.
+      This is equivalent to how it works in all other language bindings.
 
 # v35.0.0 (2021-02-22)
 
@@ -22,7 +28,7 @@
   * The `testGetValue` APIs now include a message on the `NullPointerException` thrown when the value is missing.
   * **Breaking change:** `LEGACY_TAG_PINGS` is removed from `GleanDebugActivity` ([#1510](https://github.com/mozilla/glean/pull/1510))
 * RLB
-  * **Breaking change:** `Configuration.data_path` is now a `std::path::PathBuf`([#1493](https://github.com/mozilla/glean/pull/1493)). 
+  * **Breaking change:** `Configuration.data_path` is now a `std::path::PathBuf`([#1493](https://github.com/mozilla/glean/pull/1493)).
 
 # v34.1.0 (2021-02-04)
 
