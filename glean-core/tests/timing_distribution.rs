@@ -334,3 +334,56 @@ fn stopping_non_existing_id_records_an_error() {
         )
     );
 }
+
+#[test]
+fn the_accumulate_raw_samples_api_correctly_stores_timing_values() {
+    let (glean, _t) = new_glean(None);
+
+    let mut metric = TimingDistributionMetric::new(
+        CommonMetricData {
+            name: "distribution".into(),
+            category: "telemetry".into(),
+            send_in_pings: vec!["store1".into()],
+            disabled: false,
+            lifetime: Lifetime::Ping,
+            ..Default::default()
+        },
+        TimeUnit::Second,
+    );
+
+    // Accumulate the samples. We intentionally do not report
+    // negative values to not trigger error reporting.
+    let seconds_to_nanos = 1000 * 1000 * 1000;
+    metric.accumulate_raw_samples_nanos(
+        &glean,
+        &[
+            1 * seconds_to_nanos,
+            2 * seconds_to_nanos,
+            3 * seconds_to_nanos,
+        ]
+        .to_vec(),
+    );
+
+    let snapshot = metric
+        .test_get_value(&glean, "store1")
+        .expect("Value should be stored");
+
+    // Check that we got the right sum and number of samples.
+    assert_eq!(snapshot.sum, 6 * seconds_to_nanos);
+
+    // We should get a sample in 3 buckets.
+    // These numbers are a bit magic, but they correspond to
+    // `hist.sample_to_bucket_minimum(i * seconds_to_nanos)` for `i = 1..=3`.
+    assert_eq!(1, snapshot.values[&984_625_593]);
+    assert_eq!(1, snapshot.values[&1_969_251_187]);
+    assert_eq!(1, snapshot.values[&2_784_941_737]);
+
+    // No errors should be reported.
+    assert!(test_get_num_recorded_errors(
+        &glean,
+        metric.meta(),
+        ErrorType::InvalidValue,
+        Some("store1")
+    )
+    .is_err());
+}
