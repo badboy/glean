@@ -32,9 +32,12 @@ xcodebuild \
   -scheme ${BUILD_SCHEME} \
   -destination="generic/platform=iOS" \
   -archivePath "${IOS_DEVICE_ARCHIVE_PATH}" \
-  -sdk  iphoneos \
+  -sdk iphoneos \
   SKIP_INSTALL=NO \
   BUILD_LIBRARY_FOR_DISTRIBUTION=YES
+
+find "${WORKING_DIR}/${FRAMEWORK_FOLDER_NAME}" -name "*.swiftinterface" -type f -print0 | xargs -0 -I% sed -i.bak 's/Glean\.//' %
+find "${WORKING_DIR}/${FRAMEWORK_FOLDER_NAME}" -name "*.bak" -type f -delete
 
 rm -rf "${FRAMEWORK_PATH}"
 xcodebuild \
