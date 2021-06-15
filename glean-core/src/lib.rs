@@ -3,7 +3,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #![deny(broken_intra_doc_links)]
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 //! Glean is a modern approach for recording and sending Telemetry data.
 //!
@@ -12,6 +12,28 @@
 //! All documentation can be found online:
 //!
 //! ## [The Glean SDK Book](https://mozilla.github.io/glean)
+
+uniffi_macros::include_scaffolding!("glean_core");
+
+use metrics::CounterMetric;
+
+fn with_glean<F, R>(f: F) -> R
+where
+    F: FnOnce(&Glean) -> R,
+{
+    let glean = global_glean().expect("Global Glean object not initialized");
+    let lock = glean.lock().unwrap();
+    f(&lock)
+}
+
+fn with_glean_mut<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut Glean) -> R,
+{
+    let glean = global_glean().expect("Global Glean object not initialized");
+    let mut lock = glean.lock().unwrap();
+    f(&mut lock)
+}
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -111,6 +133,31 @@ pub fn setup_glean(glean: Glean) -> Result<()> {
         *lock = glean;
     }
     Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub struct FConfiguration {
+    /// Whether upload should be enabled.
+    pub upload_enabled: bool,
+    /// Path to a directory to store all data in.
+    pub data_dir: String,
+    /// The application ID (will be sanitized during initialization).
+    pub application_id: String,
+    /// The name of the programming language used by the binding creating this instance of Glean.
+    pub language_binding_name: String,
+    /// The maximum number of events to store before sending a ping containing events.
+    pub max_events: Option<u32>,
+    /// Whether Glean should delay persistence of data from metrics with ping lifetime.
+    pub delay_ping_lifetime_io: bool,
+    /// The application's build identifier. If this is different from the one provided for a previous init,
+    /// and use_core_mps is `true`, we will trigger a "metrics" ping.
+    pub app_build: String,
+    /// Whether Glean should schedule "metrics" pings.
+    pub use_core_mps: bool,
+}
+
+pub fn initialize(cfg: FConfiguration) -> bool {
+    false
 }
 
 /// The Glean configuration.
