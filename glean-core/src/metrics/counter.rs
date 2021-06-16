@@ -74,34 +74,6 @@ impl CounterMetric {
             })
     }
 
-    pub fn add2(&self, amount: i32) {
-        crate::with_glean(|glean| {
-            if !self.should_record(glean) {
-                return;
-            }
-
-            if amount <= 0 {
-                record_error(
-                    glean,
-                    &self.meta,
-                    ErrorType::InvalidValue,
-                    format!("Added negative or zero value {}", amount),
-                    None,
-                );
-                return;
-            }
-
-            glean
-                .storage()
-                .record_with(glean, &self.meta, |old_value| match old_value {
-                    Some(Metric::Counter(old_value)) => {
-                        Metric::Counter(old_value.saturating_add(amount))
-                    }
-                    _ => Metric::Counter(amount),
-                })
-        });
-    }
-
     /// **Test-only API (exported for FFI purposes).**
     ///
     /// Gets the currently stored value as an integer.

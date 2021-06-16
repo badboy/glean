@@ -283,6 +283,9 @@ dependencies = [
  "tempfile",
  "thiserror",
  "time",
+ "uniffi",
+ "uniffi_build",
+ "uniffi_macros",
  "uuid",
  "whatsys",
 ]
@@ -312,9 +315,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "time",
- "uniffi",
  "uniffi_build",
- "uniffi_macros",
  "uuid",
  "zeitstempel",
 ]
@@ -334,6 +335,26 @@ dependencies = [
  "serde",
  "serde_json",
  "uuid",
+]
+
+[[package]]
+name = "glean-uniffi"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "crossbeam-channel",
+ "inherent",
+ "log",
+ "once_cell",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "time",
+ "uniffi",
+ "uniffi_build",
+ "uniffi_macros",
+ "uuid",
+ "whatsys",
 ]
 
 [[package]]

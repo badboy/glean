@@ -1,8 +1,8 @@
 namespace glean {
-    boolean initialize(FConfiguration cfg);
+    boolean initialize(Configuration cfg);
 };
 
-dictionary FConfiguration {
+dictionary Configuration {
     string data_dir;
     string application_id;
     string language_binding_name;
@@ -33,5 +33,5 @@ dictionary CommonMetricData {
 interface CounterMetric {
     constructor(CommonMetricData meta);
 
-    void add2(i32 amount);
+    void add(i32 amount);
 };

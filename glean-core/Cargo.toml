@@ -36,8 +36,6 @@ chrono = { version = "0.4.10", features = ["serde"] }
 once_cell = "1.4.1"
 flate2 = "1.0.19"
 zeitstempel = "0.1.0"
-uniffi = "0.12.0"
-uniffi_macros = "0.12.0"
 
 # Needed for a workaround for a timezone bug on Windows.
 # See https://bugzilla.mozilla.org/show_bug.cgi?id=1611770

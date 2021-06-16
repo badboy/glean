@@ -70,5 +70,5 @@ __pycache__
 .Python
 
 # UniFFI generated code
-glean-core/src/glean_core.uniffi.rs
-glean-core/src/uniffi
+glean-core/uniffi/src/glean_core.uniffi.rs
+glean-core/uniffi/src/uniffi
