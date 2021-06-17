@@ -17,10 +17,10 @@ impl CounterMetric {
 
     /// Internal only, synchronous API for incremeting a counter
     pub(crate) fn add_sync(&self, _glean: &Glean, amount: i32) {
-        self.add(amount);
+        log::info!("Counter({:?}).add({})", self.meta, amount)
     }
 
     pub fn add(&self, amount: i32) {
-        log::info!("Counter({:?}).add({})", self.meta, amount)
+        crate::core::with_glean(|glean| self.add_sync(glean, amount))
     }
 }

@@ -4,9 +4,11 @@
 
 uniffi_macros::include_scaffolding!("glean_core");
 
+mod core;
 mod common_metric_data;
 mod private;
 
+pub use crate::core::Glean;
 pub use common_metric_data::{CommonMetricData, Lifetime};
 pub use private::CounterMetric;
 
@@ -31,9 +33,33 @@ pub struct Configuration {
     pub use_core_mps: bool,
 }
 
-pub struct Glean;
-
-pub fn initialize(_cfg: Configuration) -> bool {
-    false
+pub fn initialize(cfg: Configuration) -> bool {
+    Glean::new(cfg).and_then(|glean| {
+        core::setup_glean(glean)
+    }).is_ok()
 }
 
+pub fn glean_enable_logging() {
+    #[cfg(target_os = "android")]
+    {
+        let _ = std::panic::catch_unwind(|| {
+            android_logger::init_once(
+                android_logger::Config::default()
+                    .with_min_level(log::Level::Debug)
+                    .with_tag("libglean_ffi"),
+            );
+            log::trace!("Android logging should be hooked up!")
+        });
+    }
+
+    #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
+    {
+        match env_logger::try_init() {
+            Ok(_) => log::trace!("stdout logging should be hooked up!"),
+            // Please note that this is only expected to fail during unit tests,
+            // where the logger might have already been initialized by a previous
+            // test. So it's fine to print with the "logger".
+            Err(_) => log::warn!("stdout logging was already initialized"),
+        };
+    }
+}
