@@ -1,5 +1,7 @@
 namespace glean {
     boolean initialize(Configuration cfg);
+
+    void glean_enable_logging();
 };
 
 dictionary Configuration {
@@ -27,11 +29,11 @@ dictionary CommonMetricData {
     Lifetime lifetime;
 
     boolean disabled;
-    string? dynamic_label;
+    string? dynamic_label = null;
 };
 
 interface CounterMetric {
     constructor(CommonMetricData meta);
 
-    void add(i32 amount);
+    void add(optional i32 amount = 1);
 };

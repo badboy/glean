@@ -15,7 +15,7 @@ uniffi::assert_compatible_version!("0.12.0"); // Please check that you depend on
 /// or by passing ownership of the buffer back into Rust code.
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn ffi_glean_995a_rustbuffer_alloc(
+pub extern "C" fn ffi_glean_487e_rustbuffer_alloc(
     size: i32,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) -> uniffi::RustBuffer {
@@ -34,7 +34,7 @@ pub extern "C" fn ffi_glean_995a_rustbuffer_alloc(
 /// make sure the `ForeignBytes` struct contains a valid pointer and length.
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_from_bytes(
+pub unsafe extern "C" fn ffi_glean_487e_rustbuffer_from_bytes(
     bytes: uniffi::ForeignBytes,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) -> uniffi::RustBuffer {
@@ -52,7 +52,7 @@ pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_from_bytes(
 /// corrupting the allocator state.
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_free(
+pub unsafe extern "C" fn ffi_glean_487e_rustbuffer_free(
     buf: uniffi::RustBuffer,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) {
@@ -76,7 +76,7 @@ pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_free(
 /// corrupting the allocator state.
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_reserve(
+pub unsafe extern "C" fn ffi_glean_487e_rustbuffer_reserve(
     buf: uniffi::RustBuffer,
     additional: i32,
     err: &mut uniffi::deps::ffi_support::ExternError,
@@ -103,7 +103,7 @@ pub unsafe extern "C" fn ffi_glean_995a_rustbuffer_reserve(
 /// because that's currently the only place we use `char*` types in our API).
 #[doc(hidden)]
 #[no_mangle]
-pub unsafe extern "C" fn ffi_glean_995a_string_free(
+pub unsafe extern "C" fn ffi_glean_487e_string_free(
     cstr: *mut std::os::raw::c_char,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) {
@@ -235,17 +235,33 @@ unsafe impl uniffi::ViaFfi for CommonMetricData {
 #[allow(clippy::all)]
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn glean_995a_initialize(
+pub extern "C" fn glean_487e_initialize(
     cfg: uniffi::RustBuffer,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) -> i8 {
     // If the provided function does not match the signature specified in the UDL
     // then this attempt to call it will not compile, and will give guidance as to why.
-    uniffi::deps::log::debug!("glean_995a_initialize");
+    uniffi::deps::log::debug!("glean_487e_initialize");
 
     uniffi::deps::ffi_support::call_with_output(err, || {
         let _retval = initialize(<Configuration as uniffi::ViaFfi>::try_lift(cfg).unwrap());
         <bool as uniffi::ViaFfi>::lower(_retval)
+    })
+}
+
+#[allow(clippy::all)]
+#[doc(hidden)]
+#[no_mangle]
+pub extern "C" fn glean_487e_glean_enable_logging(
+    err: &mut uniffi::deps::ffi_support::ExternError,
+) -> () {
+    // If the provided function does not match the signature specified in the UDL
+    // then this attempt to call it will not compile, and will give guidance as to why.
+    uniffi::deps::log::debug!("glean_487e_glean_enable_logging");
+
+    uniffi::deps::ffi_support::call_with_output(err, || {
+        let _retval = glean_enable_logging();
+        _retval
     })
 }
 // Object definitions, correspoding to UDL `interface` definitions.
@@ -264,24 +280,24 @@ pub extern "C" fn glean_995a_initialize(
 
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn ffi_glean_995a_CounterMetric_object_free(ptr: *const std::os::raw::c_void) {
+pub extern "C" fn ffi_glean_487e_CounterMetric_object_free(ptr: *const std::os::raw::c_void) {
     // We mustn't panic across the FFI, but also can't report it anywhere.
     // The best we can do it catch, warn and ignore.
     if let Err(e) = std::panic::catch_unwind(|| {
         assert!(!ptr.is_null());
         drop(unsafe { std::sync::Arc::from_raw(ptr as *const CounterMetric) })
     }) {
-        uniffi::deps::log::error!("ffi_glean_995a_CounterMetric_object_free panicked: {:?}", e);
+        uniffi::deps::log::error!("ffi_glean_487e_CounterMetric_object_free panicked: {:?}", e);
     }
 }
 #[allow(clippy::all)]
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn glean_995a_CounterMetric_new(
+pub extern "C" fn glean_487e_CounterMetric_new(
     meta: uniffi::RustBuffer,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) -> *const std::os::raw::c_void /* *const CounterMetric */ {
-    uniffi::deps::log::debug!("glean_995a_CounterMetric_new");
+    uniffi::deps::log::debug!("glean_487e_CounterMetric_new");
 
     // If the constructor does not have the same signature as declared in the UDL, then
     // this attempt to call it will fail with a (somewhat) helpful compiler error.
@@ -296,12 +312,12 @@ pub extern "C" fn glean_995a_CounterMetric_new(
 #[allow(clippy::all)]
 #[doc(hidden)]
 #[no_mangle]
-pub extern "C" fn glean_995a_CounterMetric_add(
+pub extern "C" fn glean_487e_CounterMetric_add(
     ptr: *const std::os::raw::c_void,
     amount: i32,
     err: &mut uniffi::deps::ffi_support::ExternError,
 ) -> () {
-    uniffi::deps::log::debug!("glean_995a_CounterMetric_add");
+    uniffi::deps::log::debug!("glean_487e_CounterMetric_add");
     // If the method does not have the same signature as declared in the UDL, then
     // this attempt to call it will fail with a (somewhat) helpful compiler error.
 
@@ -311,27 +327,6 @@ pub extern "C" fn glean_995a_CounterMetric_add(
             <i32 as uniffi::ViaFfi>::try_lift(amount).unwrap(),
         );
         _retval
-    })
-}
-
-#[allow(clippy::all)]
-#[doc(hidden)]
-#[no_mangle]
-pub extern "C" fn glean_995a_CounterMetric_test_get_value(
-    ptr: *const std::os::raw::c_void,
-    ping_name: uniffi::RustBuffer,
-    err: &mut uniffi::deps::ffi_support::ExternError,
-) -> uniffi::RustBuffer {
-    uniffi::deps::log::debug!("glean_995a_CounterMetric_test_get_value");
-    // If the method does not have the same signature as declared in the UDL, then
-    // this attempt to call it will fail with a (somewhat) helpful compiler error.
-
-    uniffi::deps::ffi_support::call_with_output(err, || {
-        let _retval = CounterMetric::test_get_value(
-            &<std::sync::Arc<CounterMetric> as uniffi::ViaFfi>::try_lift(ptr).unwrap(),
-            <Option<String> as uniffi::ViaFfi>::try_lift(ping_name).unwrap(),
-        );
-        <Option<i32> as uniffi::ViaFfi>::lower(_retval)
     })
 }
 
