@@ -4,6 +4,9 @@
 
 use std::convert::TryFrom;
 
+use crate::Glean;
+use crate::private::labeled::validate_dynamic_label;
+
 /// The supported metrics' lifetimes.
 ///
 /// A metric's lifetime determines when its stored data gets reset.
@@ -84,6 +87,32 @@ impl CommonMetricData {
             category: category.into(),
             send_in_pings: vec![ping_name.into()],
             ..Default::default()
+        }
+    }
+
+    /// The metric's base identifier, including the category and name, but not the label.
+    ///
+    /// If `category` is empty, it's ommitted.
+    /// Otherwise, it's the combination of the metric's `category` and `name`.
+    pub(crate) fn base_identifier(&self) -> String {
+        if self.category.is_empty() {
+            self.name.clone()
+        } else {
+            format!("{}.{}", self.category, self.name)
+        }
+    }
+
+    /// The metric's unique identifier, including the category, name and label.
+    ///
+    /// If `category` is empty, it's ommitted.
+    /// Otherwise, it's the combination of the metric's `category`, `name` and `label`.
+    pub(crate) fn identifier(&self, glean: &Glean) -> String {
+        let base_identifier = self.base_identifier();
+
+        if let Some(label) = &self.dynamic_label {
+            validate_dynamic_label(glean, self, &base_identifier, label)
+        } else {
+            base_identifier
         }
     }
 
