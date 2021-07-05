@@ -2,6 +2,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#![allow(unused)]
+
 use crate::common_metric_data::CommonMetricData;
 use crate::error_recording::{record_error, ErrorType};
 use crate::private::{Metric, MetricType};
@@ -97,9 +99,7 @@ where
     ///
     /// This is used for static labels where we can just set the name to be `name/label`.
     fn new_metric_with_name(&self, name: String) -> T {
-        let mut t = self.submetric.clone();
-        t.meta_mut().name = name;
-        t
+        self.submetric.with_name(name)
     }
 
     /// Creates a new metric with a specific label.
@@ -107,9 +107,7 @@ where
     /// This is used for dynamic labels where we have to actually validate and correct the
     /// label later when we have a Glean object.
     fn new_metric_with_dynamic_label(&self, label: String) -> T {
-        let mut t = self.submetric.clone();
-        t.meta_mut().dynamic_label = Some(label);
-        t
+        self.submetric.with_dynamic_label(label)
     }
 
     /// Creates a static label.
