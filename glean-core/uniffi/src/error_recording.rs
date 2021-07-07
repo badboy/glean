@@ -105,7 +105,7 @@ fn get_error_metric_for_metric(meta: &CommonMetricData, error: ErrorType) -> Cou
 /// * `message` - The message to log. This message is not sent with the ping.
 ///             It does not need to include the metric id, as that is automatically prepended to the message.
 /// * `num_errors` - The number of errors of the same type to report.
-pub fn record_error<O: Into<Option<i32>>>(
+pub fn record_error<O: Into<Option<u32>>>(
     glean: &Glean,
     meta: &CommonMetricData,
     error: ErrorType,

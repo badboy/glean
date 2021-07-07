@@ -41,7 +41,7 @@ impl CounterMetric {
     }
 
     /// Internal only, synchronous API for incremeting a counter
-    pub(crate) fn add_sync(&self, glean: &Glean, amount: i32) {
+    pub(crate) fn add_sync(&self, glean: &Glean, amount: u32) {
         log::info!("Counter({:?}).add({})", self.meta, amount);
 
         if !self.should_record(glean) {
@@ -63,13 +63,13 @@ impl CounterMetric {
             .storage()
             .record_with(glean, &self.meta, |old_value| match old_value {
                 Some(Metric::Counter(old_value)) => {
-                    Metric::Counter(old_value.saturating_add(amount))
+                    Metric::Counter(old_value.saturating_add(amount as i32))
                 }
-                _ => Metric::Counter(amount),
+                _ => Metric::Counter(amount as i32),
             })
     }
 
-    pub fn add(&self, amount: i32) {
+    pub fn add(&self, amount: u32) {
         let metric = self.clone();
         crate::launch_with_glean(move |glean| metric.add_sync(glean, amount))
     }
