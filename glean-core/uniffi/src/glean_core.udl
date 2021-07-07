@@ -38,7 +38,7 @@ dictionary CommonMetricData {
 interface CounterMetric {
     constructor(CommonMetricData meta);
 
-    void add(optional i32 amount = 1);
+    void add(optional u32 amount = 1);
 
     i32? test_get_value(optional string? ping_name = null);
 };
