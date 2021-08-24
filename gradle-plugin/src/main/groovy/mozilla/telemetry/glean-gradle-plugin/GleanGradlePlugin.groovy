@@ -87,13 +87,11 @@ class GleanCapability implements ComponentMetadataRule {
 class GleanPlugin implements Plugin<Project> {
     // The version of glean_parser to install from PyPI.
     private String GLEAN_PARSER_VERSION = "3.6.0"
-    // The version of Miniconda is explicitly specified.
-    // Miniconda3-4.5.12 is known to not work on Windows.
-    private String MINICONDA_VERSION = "4.5.11"
+    private String PYTHON_VERSION = "3.7.11"
 
     private String TASK_NAME_PREFIX = "gleanGenerateMetrics"
 
-    private Semaphore bootstrapMinicondaSemaphore = new Semaphore(1)
+    private Semaphore bootstrapPythonSemaphore = new Semaphore(1)
 
     /* This script runs a given Python module as a "main" module, like
      * `python -m module`. However, it first checks that the installed
@@ -438,24 +436,28 @@ except:
 
             return envDir
         } else {
-            // This sets up tasks to install a Miniconda3 environment. It installs
+            // This sets up tasks to install a Python environment. It installs
             // into the gradle user home directory so that it will be shared between
             // all libraries that use Glean. This is important because it is
             // approximately 300MB in installed size.
-            File condaBootstrapDir = new File(
+            File bootstrapDir = new File(
                 project.getGradle().gradleUserHomeDir,
-                "glean/bootstrap-${MINICONDA_VERSION}"
+                "glean/bootstrap-${PYTHON_VERSION}"
+            )
+            File envDir = new File(
+                bootstrapDir,
+                "python"
             )
 
-            // Even though we are installing the Miniconda environment to the gradle user
+            // Even though we are installing the Python environment to the gradle user
             // home directory, the gradle-python-envs plugin is hardcoded to download the
             // installer to the project's build directory. Doing so will fail if the
             // project's build directory doesn't already exist. This task ensures that
             // the project's build directory exists before downloading and installing the
-            // Miniconda environment.
+            // Python environment.
             // See https://github.com/JetBrains/gradle-python-envs/issues/26
             // The fix in the above is not actually sufficient -- we need to add createBuildDir
-            // as a dependency of Bootstrap_CONDA (where conda is installed), as the preBuild
+            // as a dependency of Bootstrap_PYTHON (where Python is installed), as the preBuild
             // task alone isn't early enough.
             Task createBuildDir = project.task("createBuildDir") {
                 description = "Make sure the build dir exists before creating the Python Environments"
@@ -469,29 +471,27 @@ except:
             }
 
             project.envs {
-                bootstrapDirectory = condaBootstrapDir
+                bootstrapDirectory = bootstrapDir
+                envsDirectory = envDir
                 pipInstallOptions = "--trusted-host pypi.python.org --no-cache-dir"
 
-                // Setup a miniconda environment. conda is used because it works
-                // non-interactively on Windows, unlike the standard Python installers
-                conda "Miniconda3", "Miniconda3-${MINICONDA_VERSION}", "64", ["glean_parser==${GLEAN_PARSER_VERSION}"]
+                // Setup a Python environment.
+                // This builds Python from source on Unix and uses the installer on Windows.
+                python "python_64", PYTHON_VERSION
+                virtualenv "python", "python_64", ["glean_parser==${GLEAN_PARSER_VERSION}"]
             }
-            File envDir = new File(
-                condaBootstrapDir,
-                "Miniconda3"
-            )
             project.tasks.whenTaskAdded { task ->
-                if (task.name.startsWith('Bootstrap_CONDA')) {
+                if (task.name.startsWith('Bootstrap_PYTHON')) {
                     task.dependsOn(createBuildDir)
 
-                    // The Bootstrap_CONDA* tasks all install miniconda to the
+                    // The Bootstrap_PYTHON* tasks all install Python to the
                     // same place, so they can't run at the same time. This
                     // holds a semaphore while running the task to make sure
                     // only one of these classes of tasks runs at the same time. 
                     // Solution proposed in this Gradle bug:
                     // https://github.com/gradle/gradle/issues/7047#issuecomment-430139316
-                    task.doFirst { bootstrapMinicondaSemaphore.acquire() }
-                    task.doLast { bootstrapMinicondaSemaphore.release() }
+                    task.doFirst { bootstrapPythonSemaphore.acquire() }
+                    task.doLast { bootstrapPythonSemaphore.release() }
                 }
             }
             project.preBuild.dependsOn(createBuildDir)
@@ -547,9 +547,9 @@ except:
         println("Requires glean_parser==${GLEAN_PARSER_VERSION}")
 
         File envDir = setupPythonEnvironmentTasks(project)
-        // Store in both gleanCondaDir (for backward compatibility reasons) and
+        // Store in both gleanPythonDir (for backward compatibility reasons) and
         // the more accurate gleanPythonEnvDir variables.
-        project.ext.set("gleanCondaDir", envDir)
+        project.ext.set("gleanPythonDir", envDir)
         project.ext.set("gleanPythonEnvDir", envDir)
 
         setupExtractMetricsFromAARTasks(project)

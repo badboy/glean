@@ -8,7 +8,7 @@
 import groovy.json.JsonOutput
 
 plugins {
-    id "com.jetbrains.python.envs" version "0.0.26"
+    id "com.jetbrains.python.envs" version "0.0.30"
 }
 
 apply plugin: 'com.android.library'
