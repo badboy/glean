@@ -95,7 +95,7 @@ internal fun loadIndirect(libraryName: String): LibGleanFFI {
 @Suppress("TooManyFunctions")
 internal interface LibGleanFFI : Library {
     companion object {
-        private val JNA_LIBRARY_NAME = "glean_ffi"
+        private val JNA_LIBRARY_NAME = "glean_uniffi"
 
         internal var INSTANCE: LibGleanFFI = loadIndirect(JNA_LIBRARY_NAME)
     }
