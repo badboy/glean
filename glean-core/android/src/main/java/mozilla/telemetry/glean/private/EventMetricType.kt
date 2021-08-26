@@ -12,6 +12,9 @@ import mozilla.telemetry.glean.rust.getAndConsumeRustString
 import mozilla.telemetry.glean.rust.toBoolean
 import mozilla.telemetry.glean.rust.toByte
 import mozilla.telemetry.glean.testing.ErrorType
+import mozilla.telemetry.glean.internal.EventMetric as InternalEventMetric
+import mozilla.telemetry.glean.internal.CommonMetricData
+import mozilla.telemetry.glean.internal.RecordedEventData as InternalRecordedEventData
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -310,4 +313,14 @@ class EventMetricType<ExtraKeysEnum : Enum<ExtraKeysEnum>, ExtraObject : EventEx
             this.handle, errorType.ordinal, pingName
         )
     }
+}
+
+class EventMetric internal constructor(private var inner: InternalEventMetric) {
+    constructor(meta: CommonMetricData, allowedExtraKeys: List<String> ) : this(InternalEventMetric(meta, allowedExtraKeys))
+
+    fun record(extra: Int) {
+        inner.internalRecord("got ${extra}")
+    }
+
+    fun testGetValue(pingName: String? = null): InternalRecordedEventData? = inner.testGetValue(pingName)
 }

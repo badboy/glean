@@ -18,7 +18,8 @@ import mozilla.telemetry.glean.GleanMetrics.GleanError
 import mozilla.telemetry.glean.GleanMetrics.GleanInternalMetrics
 import mozilla.telemetry.glean.GleanMetrics.Pings
 import mozilla.telemetry.glean.config.Configuration
-import mozilla.telemetry.glean.internal.CounterMetric
+import mozilla.telemetry.glean.private.CounterMetric
+import mozilla.telemetry.glean.private.EventMetric
 import mozilla.telemetry.glean.internal.Lifetime
 import mozilla.telemetry.glean.internal.CommonMetricData
 import mozilla.telemetry.glean.rust.LibGleanFFI
@@ -79,5 +80,18 @@ class UniffiTest {
         counterMetric.add()
 
         assertEquals(1, counterMetric.testGetValue())
+
+        val event = EventMetric(
+            CommonMetricData(
+                disabled = false,
+                category = "ui",
+                lifetime = Lifetime.PING,
+                name = "click",
+                sendInPings = listOf("store1")
+            ), allowedExtraKeys = listOf("object_id", "other")
+        )
+
+        event.record(1)
+        assertEquals(null, event.testGetValue())
     }
 }

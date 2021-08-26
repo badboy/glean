@@ -12,6 +12,8 @@ import mozilla.telemetry.glean.rust.toBoolean
 import mozilla.telemetry.glean.rust.toByte
 import mozilla.telemetry.glean.testing.ErrorType
 
+typealias CounterMetric = mozilla.telemetry.glean.internal.CounterMetric
+
 /**
  * This implements the developer facing API for recording counter metrics.
  *

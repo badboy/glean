@@ -35,10 +35,26 @@ dictionary CommonMetricData {
     string? dynamic_label = null;
 };
 
+dictionary RecordedEventData {
+    string category;
+    string name;
+    u64 timestamp;
+
+    string? extra = null;
+};
+
 interface CounterMetric {
     constructor(CommonMetricData meta);
 
     void add(optional u32 amount = 1);
 
     i32? test_get_value(optional string? ping_name = null);
+};
+
+interface EventMetric {
+    constructor(CommonMetricData meta, sequence<string> allowed_extra_keys);
+
+    void _internal_record(optional string? extra = null);
+
+    RecordedEventData? test_get_value(optional string? ping_name = null);
 };

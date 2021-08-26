@@ -10,8 +10,10 @@ use crate::Glean;
 
 pub(crate) mod labeled;
 mod counter;
+mod event;
 
 pub use counter::CounterMetric;
+pub use event::{EventMetric, RecordedEventData};
 
 /// The available metrics.
 ///

@@ -17,6 +17,7 @@ pub use crate::error::{Error, ErrorKind, Result};
 pub use crate::core::Glean;
 pub use common_metric_data::{CommonMetricData, Lifetime};
 pub use private::CounterMetric;
+pub use private::{EventMetric, RecordedEventData};
 
 #[derive(Debug, Clone)]
 pub struct Configuration {
