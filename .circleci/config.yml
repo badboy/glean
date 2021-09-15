@@ -310,6 +310,11 @@ jobs:
     resource_class: "medium+"
     steps:
       - test-rust
+      - run:
+          name: RLB tests
+          command: |
+            sudo apt install jq
+            ./glean-core/rlb/tests/delayed_ping_lifetime.sh
 
   Rust tests - beta:
     docker:
