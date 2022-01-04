@@ -66,25 +66,6 @@ module_name = sys.argv[2]
 expected_version = sys.argv[3]
 try:
     module = importlib.import_module(module_name)
-except ImportError:
-    found_version = None
-else:
-    found_version = getattr(module, '__version__')
-if found_version != expected_version:
-    if not offline:
-        subprocess.check_call([
-            sys.executable,
-            '-m',
-            'pip',
-            'install',
-            '--upgrade',
-            f'{module_name}=={expected_version}'
-        ])
-    else:
-        print(f'Using Python environment at {sys.executable},')
-        print(f'expected glean_parser version {expected_version}, found {found_version}.')
-        sys.exit(1)
-try:
     subprocess.check_call([
         sys.executable,
         '-m',
@@ -427,7 +408,7 @@ except:
 
                 // Setup a miniconda environment. conda is used because it works
                 // non-interactively on Windows, unlike the standard Python installers
-                conda "Miniconda3", "Miniconda3-${MINICONDA_VERSION}", "64", ["glean_parser==${GLEAN_PARSER_VERSION}"]
+                conda "Miniconda3", "Miniconda3-${MINICONDA_VERSION}", "64", ["git+ssh://git@github.com/badboy/glean_parser@build-date#egg=glean-parser"]
             }
             File envDir = new File(
                 condaBootstrapDir,
@@ -497,7 +478,7 @@ except:
         // Print the required glean_parser version to the console. This is
         // offline builds, and is mentioned in the documentation for offline
         // builds.
-        println("Requires glean_parser==${GLEAN_PARSER_VERSION}")
+        println("Requires glean_parser==git")
 
         File envDir = setupPythonEnvironmentTasks(project)
         // Store in both gleanCondaDir (for backward compatibility reasons) and
