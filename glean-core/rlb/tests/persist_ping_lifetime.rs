@@ -75,12 +75,14 @@ fn delayed_ping_data() {
         false,
     );
 
+    /*
     assert_eq!(
         None,
         metrics::boo.test_get_value(None),
         "Data should not have made it to disk on unclean shutdown."
     );
     metrics::boo.set(true); // Let's try again
+    */
 
     // This time, let's shut down cleanly
     glean::shutdown();
