@@ -7,8 +7,6 @@ use std::fmt::{self, Display};
 use std::io;
 use std::result;
 
-use rkv::StoreError;
-
 /// A specialized [`Result`] type for this crate's operations.
 ///
 /// This is generally used to avoid writing out [`Error`] directly and
@@ -32,9 +30,6 @@ pub enum ErrorKind {
 
     /// IO error
     IoError(io::Error),
-
-    /// IO error
-    Rkv(StoreError),
 
     /// JSON error
     Json(serde_json::error::Error),
@@ -106,7 +101,6 @@ impl Display for Error {
         match self.kind() {
             Lifetime(l) => write!(f, "Lifetime conversion from {} failed", l),
             IoError(e) => write!(f, "An I/O error occurred: {}", e),
-            Rkv(e) => write!(f, "An Rkv error occurred: {}", e),
             Json(e) => write!(f, "A JSON error occurred: {}", e),
             TimeUnit(t) => write!(f, "TimeUnit conversion from {} failed", t),
             MemoryUnit(m) => write!(f, "MemoryUnit conversion from {} failed", m),
@@ -135,14 +129,6 @@ impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error {
             kind: ErrorKind::IoError(error),
-        }
-    }
-}
-
-impl From<StoreError> for Error {
-    fn from(error: StoreError) -> Error {
-        Error {
-            kind: ErrorKind::Rkv(error),
         }
     }
 }
