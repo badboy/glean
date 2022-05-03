@@ -130,7 +130,6 @@ impl Database {
         } else {
             iter_sql.to_string()
         };
-        dbg!(&iter_sql, lifetime, storage_name, metric_key);
         let mut stmt = unwrap_or!(self.conn.prepare_cached(&iter_sql), return);
         let mut rows = if let Some(metric_key) = metric_key {
             unwrap_or!(
@@ -187,7 +186,6 @@ impl Database {
             AND id = ?3
         "#;
 
-        dbg!(has_metric_sql, lifetime, storage_name, metric_identifier);
         let mut stmt = unwrap_or!(self.conn.prepare_cached(has_metric_sql), return false);
         let mut metric_iter = unwrap_or!(
             stmt.query([lifetime.as_str(), storage_name, metric_identifier]),
@@ -242,7 +240,6 @@ impl Database {
             updated_at = excluded.updated_at
         "#;
 
-        dbg!(insert_sql, lifetime, storage_name, key, metric);
         let mut stmt = self.conn.prepare_cached(insert_sql)?;
         let encoded = bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
         stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
@@ -328,7 +325,6 @@ impl Database {
             updated_at = excluded.updated_at
         "#;
 
-        dbg!(insert_sql, lifetime, storage_name, key, &new_value);
         {
             let mut stmt = tx.prepare_cached(insert_sql)?;
             let encoded =
