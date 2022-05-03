@@ -60,6 +60,7 @@ impl Database {
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
         )?;
 
+        // as per application-servers, components/places/src/db/db.rs
         #[cfg(target_os = "android")]
         {
             // `temp_store = 2` is required on Android to force the DB to keep temp
@@ -68,7 +69,11 @@ impl Database {
             db.set_pragma("temp_store", 2)?;
         }
         conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.pragma_update(None, "wal_autocheckpoint", 62)?;
+        conn.pragma_update(None, "page_size", 32768)?;
+        conn.pragma_update(None, "cache_size", -6144)?;
         conn.execute(SCHEMA, [])?;
+        conn.set_prepared_statement_cache_capacity(128);
 
         let db = Self { conn: AssertUnwindSafe(conn) };
 
@@ -125,7 +130,7 @@ impl Database {
             iter_sql.to_string()
         };
         dbg!(&iter_sql, lifetime, storage_name, metric_key);
-        let mut stmt = unwrap_or!(self.conn.prepare(&iter_sql), return);
+        let mut stmt = unwrap_or!(self.conn.prepare_cached(&iter_sql), return);
         let mut rows = if let Some(metric_key) = metric_key {
             unwrap_or!(
                 stmt.query(params![
@@ -182,7 +187,7 @@ impl Database {
         "#;
 
         dbg!(has_metric_sql, lifetime, storage_name, metric_identifier);
-        let mut stmt = unwrap_or!(self.conn.prepare(has_metric_sql), return false);
+        let mut stmt = unwrap_or!(self.conn.prepare_cached(has_metric_sql), return false);
         let mut metric_iter = unwrap_or!(
             stmt.query([lifetime.as_str(), storage_name, metric_identifier]),
             return false
@@ -237,7 +242,7 @@ impl Database {
         "#;
 
         dbg!(insert_sql, lifetime, storage_name, key, metric);
-        let mut stmt = self.conn.prepare(insert_sql)?;
+        let mut stmt = self.conn.prepare_cached(insert_sql)?;
         let encoded = bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
         stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
 
@@ -298,7 +303,7 @@ impl Database {
         LIMIT 1
         "#;
 
-        let mut stmt = self.conn.prepare(&find_sql)?;
+        let mut stmt = self.conn.prepare_cached(&find_sql)?;
         let mut rows = stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
 
         let new_value = if let Ok(Some(row)) = rows.next() {
@@ -321,7 +326,7 @@ impl Database {
         "#;
 
         dbg!(insert_sql, lifetime, storage_name, key, &new_value);
-        let mut stmt = self.conn.prepare(insert_sql)?;
+        let mut stmt = self.conn.prepare_cached(insert_sql)?;
         let encoded =
             bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
         stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
@@ -343,7 +348,7 @@ impl Database {
     /// This function will **not** panic on database errors.
     pub fn clear_ping_lifetime_storage(&self, storage_name: &str) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2";
-        let mut stmt = self.conn.prepare(clear_sql)?;
+        let mut stmt = self.conn.prepare_cached(clear_sql)?;
         stmt.execute([Lifetime::Ping.as_str(), storage_name])?;
         Ok(())
     }
@@ -373,7 +378,7 @@ impl Database {
         metric_id: &str,
     ) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2 AND id = ?3";
-        let mut stmt = self.conn.prepare(clear_sql)?;
+        let mut stmt = self.conn.prepare_cached(clear_sql)?;
         stmt.execute([lifetime.as_str(), storage_name, metric_id])?;
         Ok(())
     }
@@ -387,7 +392,7 @@ impl Database {
     /// * This function will **not** panic on database errors.
     pub fn clear_lifetime(&self, lifetime: Lifetime) {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1";
-        let mut stmt = unwrap_or!(self.conn.prepare(clear_sql), return);
+        let mut stmt = unwrap_or!(self.conn.prepare_cached(clear_sql), return);
         let res = stmt.execute([lifetime.as_str()]);
 
         if let Err(e) = res {
