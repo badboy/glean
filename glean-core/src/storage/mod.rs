@@ -130,10 +130,12 @@ impl StorageManager {
         metric_id: &str,
         metric_lifetime: Lifetime,
     ) -> Option<Metric> {
+        dbg!("snapshot_metric", store_name, metric_id);
         let mut snapshot: Option<Metric> = None;
 
         let mut snapshotter = |id: &[u8], metric: &Metric| {
             let id = String::from_utf8_lossy(id).into_owned();
+            dbg!("snapshotter", &id);
             if id == metric_id {
                 snapshot = Some(metric.clone())
             }

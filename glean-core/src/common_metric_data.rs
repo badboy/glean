@@ -113,6 +113,7 @@ impl CommonMetricData {
         let base_identifier = self.base_identifier();
 
         if let Some(label) = &self.dynamic_label {
+            dbg!("identifier", "validate", label);
             validate_dynamic_label(glean, self, &base_identifier, label)
         } else {
             base_identifier

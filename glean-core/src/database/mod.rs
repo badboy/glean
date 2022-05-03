@@ -2,353 +2,69 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
-use std::fs;
 use std::num::NonZeroU64;
 use std::path::Path;
 use std::str;
-use std::sync::RwLock;
+use std::fs;
 
-use rkv::StoreOptions;
-
-// Select the LMDB-powered storage backend when the feature is not activated.
-#[cfg(not(feature = "rkv-safe-mode"))]
-mod backend {
-    use std::path::Path;
-
-    /// cbindgen:ignore
-    pub type Rkv = rkv::Rkv<rkv::backend::LmdbEnvironment>;
-    /// cbindgen:ignore
-    pub type SingleStore = rkv::SingleStore<rkv::backend::LmdbDatabase>;
-    /// cbindgen:ignore
-    pub type Writer<'t> = rkv::Writer<rkv::backend::LmdbRwTransaction<'t>>;
-
-    pub fn rkv_new(path: &Path) -> Result<Rkv, rkv::StoreError> {
-        Rkv::new::<rkv::backend::Lmdb>(path)
-    }
-
-    /// No migration necessary when staying with LMDB.
-    pub fn migrate(_path: &Path, _dst_env: &Rkv) {
-        // Intentionally left empty.
-    }
-}
-
-// Select the "safe mode" storage backend when the feature is activated.
-#[cfg(feature = "rkv-safe-mode")]
-mod backend {
-    use rkv::migrator::Migrator;
-    use std::{fs, path::Path};
-
-    /// cbindgen:ignore
-    pub type Rkv = rkv::Rkv<rkv::backend::SafeModeEnvironment>;
-    /// cbindgen:ignore
-    pub type SingleStore = rkv::SingleStore<rkv::backend::SafeModeDatabase>;
-    /// cbindgen:ignore
-    pub type Writer<'t> = rkv::Writer<rkv::backend::SafeModeRwTransaction<'t>>;
-
-    pub fn rkv_new(path: &Path) -> Result<Rkv, rkv::StoreError> {
-        match Rkv::new::<rkv::backend::SafeMode>(path) {
-            // An invalid file can mean:
-            // 1. An empty file.
-            // 2. A corrupted file.
-            //
-            // In both instances there's not much we can do.
-            // Drop the data by removing the file, and start over.
-            Err(rkv::StoreError::FileInvalid) => {
-                let safebin = path.join("data.safe.bin");
-                fs::remove_file(safebin).map_err(|_| rkv::StoreError::FileInvalid)?;
-                // Now try again, we only handle that error once.
-                Rkv::new::<rkv::backend::SafeMode>(path)
-            }
-            other => other,
-        }
-    }
-
-    fn delete_and_log(path: &Path, msg: &str) {
-        if let Err(err) = fs::remove_file(path) {
-            match err.kind() {
-                std::io::ErrorKind::NotFound => {
-                    // Silently drop this error, the file was already non-existing.
-                }
-                _ => log::warn!("{}", msg),
-            }
-        }
-    }
-
-    fn delete_lmdb_database(path: &Path) {
-        let datamdb = path.join("data.mdb");
-        delete_and_log(&datamdb, "Failed to delete old data.");
-
-        let lockmdb = path.join("lock.mdb");
-        delete_and_log(&lockmdb, "Failed to delete old lock.");
-    }
-
-    /// Migrate from LMDB storage to safe-mode storage.
-    ///
-    /// This migrates the data once, then deletes the LMDB storage.
-    /// The safe-mode storage must be empty for it to work.
-    /// Existing data will not be overwritten.
-    /// If the destination database is not empty the LMDB database is deleted
-    /// without migrating data.
-    /// This is a no-op if no LMDB database file exists.
-    pub fn migrate(path: &Path, dst_env: &Rkv) {
-        use rkv::{MigrateError, StoreError};
-
-        log::debug!("Migrating files in {}", path.display());
-
-        // Shortcut if no data to migrate is around.
-        let datamdb = path.join("data.mdb");
-        if !datamdb.exists() {
-            log::debug!("No data to migrate.");
-            return;
-        }
-
-        // We're handling the same error cases as `easy_migrate_lmdb_to_safe_mode`,
-        // but annotate each why they don't cause problems for Glean.
-        // Additionally for known cases we delete the LMDB database regardless.
-        let should_delete =
-            match Migrator::open_and_migrate_lmdb_to_safe_mode(path, |builder| builder, dst_env) {
-                // Source environment is corrupted.
-                // We start fresh with the new database.
-                Err(MigrateError::StoreError(StoreError::FileInvalid)) => true,
-                Err(MigrateError::StoreError(StoreError::DatabaseCorrupted)) => true,
-                // Path not accessible.
-                // Somehow our directory vanished between us creating it and reading from it.
-                // Nothing we can do really.
-                Err(MigrateError::StoreError(StoreError::IoError(_))) => true,
-                // Path accessible but incompatible for configuration.
-                // This should not happen, we never used storages that safe-mode doesn't understand.
-                // If it does happen, let's start fresh and use the safe-mode from now on.
-                Err(MigrateError::StoreError(StoreError::UnsuitableEnvironmentPath(_))) => true,
-                // Nothing to migrate.
-                // Source database was empty. We just start fresh anyway.
-                Err(MigrateError::SourceEmpty) => true,
-                // Migrating would overwrite.
-                // Either a previous migration failed and we still started writing data,
-                // or someone placed back an old data file.
-                // In any case we better stay on the new data and delete the old one.
-                Err(MigrateError::DestinationNotEmpty) => {
-                    log::warn!("Failed to migrate old data. Destination was not empty");
-                    true
-                }
-                // An internal lock was poisoned.
-                // This would only happen if multiple things run concurrently and one crashes.
-                Err(MigrateError::ManagerPoisonError) => false,
-                // Couldn't close source environment and delete files on disk (e.g. other stores still open).
-                // This could only happen if multiple instances are running,
-                // we leave files in place.
-                Err(MigrateError::CloseError(_)) => false,
-                // Other store errors are never returned from the migrator.
-                // We need to handle them to please rustc.
-                Err(MigrateError::StoreError(_)) => false,
-                // Other errors can't happen, so this leaves us with the Ok case.
-                // This already deleted the LMDB files.
-                Ok(()) => false,
-            };
-
-        if should_delete {
-            log::debug!("Need to delete remaining LMDB files.");
-            delete_lmdb_database(path);
-        }
-
-        log::debug!("Migration ended. Safe-mode database in {}", path.display());
-    }
-}
+use rusqlite::{params, Connection, OpenFlags};
 
 use crate::metrics::Metric;
 use crate::CommonMetricData;
 use crate::Glean;
 use crate::Lifetime;
 use crate::Result;
-use backend::*;
+
+const SCHEMA: &str = r#"
+CREATE TABLE IF NOT EXISTS telemetry
+(
+  id TEXT NOT NULL,
+  ping TEXT NOT NULL,
+  lifetime TEXT NOT NULL,
+  value BLOB,
+  updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
+  UNIQUE(id, ping)
+)
+
+"#;
 
 pub struct Database {
-    /// Handle to the database environment.
-    rkv: Rkv,
-
-    /// Handles to the "lifetime" stores.
-    ///
-    /// A "store" is a handle to the underlying database.
-    /// We keep them open for fast and frequent access.
-    user_store: SingleStore,
-    ping_store: SingleStore,
-    application_store: SingleStore,
-
-    /// If the `delay_ping_lifetime_io` Glean config option is `true`,
-    /// we will save metrics with 'ping' lifetime data in a map temporarily
-    /// so as to persist them to disk using rkv in bulk on demand.
-    ping_lifetime_data: Option<RwLock<BTreeMap<String, Metric>>>,
-
-    // Initial file size when opening the database.
-    file_size: Option<NonZeroU64>,
+    conn: Connection,
 }
 
 impl std::fmt::Debug for Database {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         fmt.debug_struct("Database")
-            .field("rkv", &self.rkv)
-            .field("user_store", &"SingleStore")
-            .field("ping_store", &"SingleStore")
-            .field("application_store", &"SingleStore")
-            .field("ping_lifetime_data", &self.ping_lifetime_data)
+            .field("conn", &self.conn)
             .finish()
     }
-}
-
-/// Calculate the  database size from all the files in the directory.
-///
-///  # Arguments
-///
-///  *`path` - The path to the directory
-///
-///  # Returns
-///
-/// Returns the non-zero combined size of all files in a directory,
-/// or `None` on error or if the size is `0`.
-fn database_size(dir: &Path) -> Option<NonZeroU64> {
-    let mut total_size = 0;
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            if let Ok(file_type) = entry.file_type() {
-                if file_type.is_file() {
-                    let path = entry.path();
-                    if let Ok(metadata) = fs::metadata(path) {
-                        total_size += metadata.len();
-                    } else {
-                        continue;
-                    }
-                }
-            }
-        }
-    }
-
-    NonZeroU64::new(total_size)
 }
 
 impl Database {
     /// Initializes the data store.
     ///
-    /// This opens the underlying rkv store and creates
+    /// This opens the underlying SQLite store and creates
     /// the underlying directory structure.
-    ///
-    /// It also loads any Lifetime::Ping data that might be
-    /// persisted, in case `delay_ping_lifetime_io` is set.
-    pub fn new(data_path: &Path, delay_ping_lifetime_io: bool) -> Result<Self> {
-        #[cfg(all(windows, not(feature = "rkv-safe-mode")))]
-        {
-            // The underlying lmdb wrapper implementation
-            // cannot actually handle non-UTF8 paths on Windows.
-            // It will unconditionally panic if passed one.
-            // See
-            // https://github.com/mozilla/lmdb-rs/blob/df1c2f56e3088f097c719c57b9925ab51e26f3f4/src/environment.rs#L43-L53
-            //
-            // To avoid this, in case we're using LMDB on Windows (that's just testing now though),
-            // we simply error out earlier.
-            if data_path.to_str().is_none() {
-                return Err(crate::Error::utf8_error());
-            }
-        }
-
+    pub fn new(data_path: &Path, _delay_ping_lifetime_io: bool) -> Result<Self> {
         let path = data_path.join("db");
         log::debug!("Database path: {:?}", path.display());
-        let file_size = database_size(&path);
 
-        let rkv = Self::open_rkv(&path)?;
-        let user_store = rkv.open_single(Lifetime::User.as_str(), StoreOptions::create())?;
-        let ping_store = rkv.open_single(Lifetime::Ping.as_str(), StoreOptions::create())?;
-        let application_store =
-            rkv.open_single(Lifetime::Application.as_str(), StoreOptions::create())?;
-        let ping_lifetime_data = if delay_ping_lifetime_io {
-            Some(RwLock::new(BTreeMap::new()))
-        } else {
-            None
-        };
+        fs::create_dir_all(&path)?;
+        let sql_path = path.join("telemetry.db");
+        let conn = Connection::open_with_flags(sql_path, OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE).unwrap();
+        conn.execute(SCHEMA, []).unwrap();
+        conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(())).unwrap();
 
         let db = Self {
-            rkv,
-            user_store,
-            ping_store,
-            application_store,
-            ping_lifetime_data,
-            file_size,
+            conn,
         };
-
-        db.load_ping_lifetime_data();
 
         Ok(db)
     }
 
     /// Get the initial database file size.
     pub fn file_size(&self) -> Option<NonZeroU64> {
-        self.file_size
-    }
-
-    fn get_store(&self, lifetime: Lifetime) -> &SingleStore {
-        match lifetime {
-            Lifetime::User => &self.user_store,
-            Lifetime::Ping => &self.ping_store,
-            Lifetime::Application => &self.application_store,
-        }
-    }
-
-    /// Creates the storage directories and inits rkv.
-    fn open_rkv(path: &Path) -> Result<Rkv> {
-        fs::create_dir_all(&path)?;
-
-        let rkv = rkv_new(path)?;
-        migrate(path, &rkv);
-
-        log::info!("Database initialized");
-        Ok(rkv)
-    }
-
-    /// Build the key of the final location of the data in the database.
-    /// Such location is built using the storage name and the metric
-    /// key/name (if available).
-    ///
-    /// # Arguments
-    ///
-    /// * `storage_name` - the name of the storage to store/fetch data from.
-    /// * `metric_key` - the optional metric key/name.
-    ///
-    /// # Returns
-    ///
-    /// A string representing the location in the database.
-    fn get_storage_key(storage_name: &str, metric_key: Option<&str>) -> String {
-        match metric_key {
-            Some(k) => format!("{}#{}", storage_name, k),
-            None => format!("{}#", storage_name),
-        }
-    }
-
-    /// Loads Lifetime::Ping data from rkv to memory,
-    /// if `delay_ping_lifetime_io` is set to true.
-    ///
-    /// Does nothing if it isn't or if there is not data to load.
-    fn load_ping_lifetime_data(&self) {
-        if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-            let mut data = ping_lifetime_data
-                .write()
-                .expect("Can't read ping lifetime data");
-
-            let reader = unwrap_or!(self.rkv.read(), return);
-            let store = self.get_store(Lifetime::Ping);
-            let mut iter = unwrap_or!(store.iter_start(&reader), return);
-
-            while let Some(Ok((metric_id, value))) = iter.next() {
-                let metric_id = match str::from_utf8(metric_id) {
-                    Ok(metric_id) => metric_id.to_string(),
-                    _ => continue,
-                };
-                let metric: Metric = match value {
-                    rkv::Value::Blob(blob) => unwrap_or!(bincode::deserialize(blob), continue),
-                    _ => continue,
-                };
-
-                data.insert(metric_id, metric);
-            }
-        }
+        None
     }
 
     /// Iterates with the provided transaction function
@@ -382,43 +98,41 @@ impl Database {
     ) where
         F: FnMut(&[u8], &Metric),
     {
-        let iter_start = Self::get_storage_key(storage_name, metric_key);
-        let len = iter_start.len();
+        let iter_sql = r#"
+        SELECT id, value
+        FROM telemetry
+        WHERE
+            lifetime = ?1
+            AND ping = ?2
+        "#;
 
-        // Lifetime::Ping data is not immediately persisted to disk if
-        // Glean has `delay_ping_lifetime_io` set to true
-        if lifetime == Lifetime::Ping {
-            if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-                let data = ping_lifetime_data
-                    .read()
-                    .expect("Can't read ping lifetime data");
-                for (key, value) in data.iter() {
-                    if key.starts_with(&iter_start) {
-                        let key = &key[len..];
-                        transaction_fn(key.as_bytes(), value);
-                    }
-                }
-                return;
-            }
-        }
+        let iter_sql = if metric_key.is_some() {
+            format!("{} AND id LIKE ?3 || '%'", iter_sql)
+        } else {
+            iter_sql.to_string()
+        };
+        dbg!(&iter_sql, lifetime, storage_name, metric_key);
+        let mut stmt = self.conn.prepare(&iter_sql).unwrap();
+        let mut rows = if let Some(metric_key) = metric_key {
+            stmt.query(params![
+                lifetime.as_str().to_string(),
+                storage_name,
+                metric_key
+            ])
+            .unwrap()
+        } else {
+            stmt.query(params![lifetime.as_str().to_string(), storage_name])
+                .unwrap()
+        };
 
-        let reader = unwrap_or!(self.rkv.read(), return);
-        let mut iter = unwrap_or!(
-            self.get_store(lifetime).iter_from(&reader, &iter_start),
-            return
-        );
-
-        while let Some(Ok((metric_id, value))) = iter.next() {
-            if !metric_id.starts_with(iter_start.as_bytes()) {
-                break;
-            }
-
-            let metric_id = &metric_id[len..];
-            let metric: Metric = match value {
-                rkv::Value::Blob(blob) => unwrap_or!(bincode::deserialize(blob), continue),
+        while let Ok(Some(row)) = rows.next() {
+            let metric_id: String = row.get(0).unwrap();
+            let blob: Vec<u8> = row.get(1).unwrap();
+            let metric: Metric = match bincode::deserialize(&blob) {
+                Ok(metric) => metric,
                 _ => continue,
             };
-            transaction_fn(metric_id, &metric);
+            transaction_fn(metric_id.as_bytes(), &metric);
         }
     }
 
@@ -441,40 +155,22 @@ impl Database {
         storage_name: &str,
         metric_identifier: &str,
     ) -> bool {
-        let key = Self::get_storage_key(storage_name, Some(metric_identifier));
+        let has_metric_sql = r#"
+        SELECT id
+        FROM telemetry
+        WHERE
+            lifetime = ?1
+            AND ping = ?2
+            AND id = ?3
+        "#;
 
-        // Lifetime::Ping data is not persisted to disk if
-        // Glean has `delay_ping_lifetime_io` set to true
-        if lifetime == Lifetime::Ping {
-            if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-                return ping_lifetime_data
-                    .read()
-                    .map(|data| data.contains_key(&key))
-                    .unwrap_or(false);
-            }
-        }
+        dbg!(has_metric_sql, lifetime, storage_name, metric_identifier);
+        let mut stmt = self.conn.prepare(has_metric_sql).unwrap();
+        let mut metric_iter = stmt
+            .query([lifetime.as_str(), storage_name, metric_identifier])
+            .unwrap();
 
-        let reader = unwrap_or!(self.rkv.read(), return false);
-        self.get_store(lifetime)
-            .get(&reader, &key)
-            .unwrap_or(None)
-            .is_some()
-    }
-
-    /// Writes to the specified storage with the provided transaction function.
-    ///
-    /// If the storage is unavailable, it will return an error.
-    ///
-    /// # Panics
-    ///
-    /// * This function will **not** panic on database errors.
-    fn write_with_store<F>(&self, store_name: Lifetime, mut transaction_fn: F) -> Result<()>
-    where
-        F: FnMut(Writer, &SingleStore) -> Result<()>,
-    {
-        let writer = self.rkv.write().unwrap();
-        let store = self.get_store(store_name);
-        transaction_fn(writer, store)
+        metric_iter.next().unwrap().is_some()
     }
 
     /// Records a metric in the underlying storage system.
@@ -511,27 +207,23 @@ impl Database {
         key: &str,
         metric: &Metric,
     ) -> Result<()> {
-        let final_key = Self::get_storage_key(storage_name, Some(key));
+        let insert_sql = r#"
+        INSERT INTO
+            telemetry (id, ping, lifetime, value, updated_at)
+        VALUES
+            (?1, ?2, ?3, ?4, DATETIME('now'))
+        ON CONFLICT(id, ping) DO UPDATE SET
+            lifetime = excluded.lifetime,
+            value = excluded.value,
+            updated_at = excluded.updated_at
+        "#;
 
-        // Lifetime::Ping data is not immediately persisted to disk if
-        // Glean has `delay_ping_lifetime_io` set to true
-        if lifetime == Lifetime::Ping {
-            if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-                let mut data = ping_lifetime_data
-                    .write()
-                    .expect("Can't read ping lifetime data");
-                data.insert(final_key, metric.clone());
-                return Ok(());
-            }
-        }
-
+        dbg!(insert_sql, lifetime, storage_name, key, metric);
+        let mut stmt = self.conn.prepare(insert_sql).unwrap();
         let encoded = bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
-        let value = rkv::Value::Blob(&encoded);
+        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])
+            .unwrap();
 
-        let mut writer = self.rkv.write()?;
-        self.get_store(lifetime)
-            .put(&mut writer, final_key, &value)?;
-        writer.commit()?;
         Ok(())
     }
 
@@ -578,48 +270,46 @@ impl Database {
     where
         F: FnMut(Option<Metric>) -> Metric,
     {
-        let final_key = Self::get_storage_key(storage_name, Some(key));
+        // TODO: Do this in a transaction
+        let find_sql = r#"
+        SELECT value
+        FROM telemetry
+        WHERE
+            lifetime = ?1
+            AND ping = ?2
+            AND id = ?3
+        LIMIT 1
+        "#;
 
-        // Lifetime::Ping data is not persisted to disk if
-        // Glean has `delay_ping_lifetime_io` set to true
-        if lifetime == Lifetime::Ping {
-            if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-                let mut data = ping_lifetime_data
-                    .write()
-                    .expect("Can't access ping lifetime data as writable");
-                let entry = data.entry(final_key);
-                match entry {
-                    Entry::Vacant(entry) => {
-                        entry.insert(transform(None));
-                    }
-                    Entry::Occupied(mut entry) => {
-                        let old_value = entry.get().clone();
-                        entry.insert(transform(Some(old_value)));
-                    }
-                }
-                return Ok(());
-            }
-        }
+        let mut stmt = self.conn.prepare(&find_sql).unwrap();
+        let mut rows = stmt
+            .query(params![lifetime.as_str().to_string(), storage_name, key])
+            .unwrap();
 
-        let mut writer = self.rkv.write()?;
-        let store = self.get_store(lifetime);
-        let new_value: Metric = {
-            let old_value = store.get(&writer, &final_key)?;
-
-            match old_value {
-                Some(rkv::Value::Blob(blob)) => {
-                    let old_value = bincode::deserialize(blob).ok();
-                    transform(old_value)
-                }
-                _ => transform(None),
-            }
+        let new_value = if let Ok(Some(row)) = rows.next() {
+            let blob: Vec<u8> = row.get(0).unwrap();
+            let old_value = bincode::deserialize(&blob).ok();
+            transform(old_value)
+        } else {
+            transform(None)
         };
 
-        let encoded =
-            bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-        let value = rkv::Value::Blob(&encoded);
-        store.put(&mut writer, final_key, &value)?;
-        writer.commit()?;
+        let insert_sql = r#"
+        INSERT INTO
+            telemetry (id, ping, lifetime, value, updated_at)
+        VALUES
+            (?1, ?2, ?3, ?4, DATETIME('now'))
+        ON CONFLICT(id, ping) DO UPDATE SET
+            lifetime = excluded.lifetime,
+            value = excluded.value,
+            updated_at = excluded.updated_at
+        "#;
+
+        dbg!(insert_sql, lifetime, storage_name, key, &new_value);
+        let mut stmt = self.conn.prepare(insert_sql).unwrap();
+        let encoded = bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
+        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])
+            .unwrap();
         Ok(())
     }
 
@@ -637,40 +327,10 @@ impl Database {
     ///
     /// This function will **not** panic on database errors.
     pub fn clear_ping_lifetime_storage(&self, storage_name: &str) -> Result<()> {
-        // Lifetime::Ping data will be saved to `ping_lifetime_data`
-        // in case `delay_ping_lifetime_io` is set to true
-        if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-            ping_lifetime_data
-                .write()
-                .expect("Can't access ping lifetime data as writable")
-                .retain(|metric_id, _| !metric_id.starts_with(storage_name));
-        }
-
-        self.write_with_store(Lifetime::Ping, |mut writer, store| {
-            let mut metrics = Vec::new();
-            {
-                let mut iter = store.iter_from(&writer, &storage_name)?;
-                while let Some(Ok((metric_id, _))) = iter.next() {
-                    if let Ok(metric_id) = std::str::from_utf8(metric_id) {
-                        if !metric_id.starts_with(&storage_name) {
-                            break;
-                        }
-                        metrics.push(metric_id.to_owned());
-                    }
-                }
-            }
-
-            let mut res = Ok(());
-            for to_delete in metrics {
-                if let Err(e) = store.delete(&mut writer, to_delete) {
-                    log::warn!("Can't delete from store: {:?}", e);
-                    res = Err(e);
-                }
-            }
-
-            writer.commit()?;
-            Ok(res?)
-        })
+        let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2";
+        let mut stmt = self.conn.prepare(clear_sql).unwrap();
+        stmt.execute([Lifetime::Ping.as_str(), storage_name]).map_err(|_| crate::Error::not_initialized())?;
+        Ok(())
     }
 
     /// Removes a single metric from the storage.
@@ -697,31 +357,10 @@ impl Database {
         storage_name: &str,
         metric_id: &str,
     ) -> Result<()> {
-        let final_key = Self::get_storage_key(storage_name, Some(metric_id));
-
-        // Lifetime::Ping data is not persisted to disk if
-        // Glean has `delay_ping_lifetime_io` set to true
-        if lifetime == Lifetime::Ping {
-            if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-                let mut data = ping_lifetime_data
-                    .write()
-                    .expect("Can't access app lifetime data as writable");
-                data.remove(&final_key);
-            }
-        }
-
-        self.write_with_store(lifetime, |mut writer, store| {
-            if let Err(e) = store.delete(&mut writer, final_key.clone()) {
-                if self.ping_lifetime_data.is_some() {
-                    // If ping_lifetime_data exists, it might be
-                    // that data is in memory, but not yet in rkv.
-                    return Ok(());
-                }
-                return Err(e.into());
-            }
-            writer.commit()?;
-            Ok(())
-        })
+        let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2 AND id = ?3";
+        let mut stmt = self.conn.prepare(clear_sql).unwrap();
+        stmt.execute([lifetime.as_str(), storage_name, metric_id]).map_err(|_| crate::Error::not_initialized())?;
+        Ok(())
     }
 
     /// Clears all the metrics in the database, for the provided lifetime.
@@ -732,11 +371,10 @@ impl Database {
     ///
     /// * This function will **not** panic on database errors.
     pub fn clear_lifetime(&self, lifetime: Lifetime) {
-        let res = self.write_with_store(lifetime, |mut writer, store| {
-            store.clear(&mut writer)?;
-            writer.commit()?;
-            Ok(())
-        });
+        let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1";
+        let mut stmt = self.conn.prepare(clear_sql).unwrap();
+        let res = stmt.execute([lifetime.as_str()]);
+
         if let Err(e) = res {
             log::warn!("Could not clear store for lifetime {:?}: {:?}", lifetime, e);
         }
@@ -750,13 +388,6 @@ impl Database {
     ///
     /// * This function will **not** panic on database errors.
     pub fn clear_all(&self) {
-        if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-            ping_lifetime_data
-                .write()
-                .expect("Can't access ping lifetime data as writable")
-                .clear();
-        }
-
         for lifetime in [Lifetime::User, Lifetime::Ping, Lifetime::Application].iter() {
             self.clear_lifetime(*lifetime);
         }
@@ -770,29 +401,11 @@ impl Database {
     ///
     /// * This function will **not** panic on database errors.
     pub fn persist_ping_lifetime_data(&self) -> Result<()> {
-        if let Some(ping_lifetime_data) = &self.ping_lifetime_data {
-            let data = ping_lifetime_data
-                .read()
-                .expect("Can't read ping lifetime data");
-
-            self.write_with_store(Lifetime::Ping, |mut writer, store| {
-                for (key, value) in data.iter() {
-                    let encoded =
-                        bincode::serialize(&value).expect("IMPOSSIBLE: Serializing metric failed");
-                    // There is no need for `get_storage_key` here because
-                    // the key is already formatted from when it was saved
-                    // to ping_lifetime_data.
-                    store.put(&mut writer, &key, &rkv::Value::Blob(&encoded))?;
-                }
-                writer.commit()?;
-                Ok(())
-            })?;
-        }
         Ok(())
     }
 }
 
-#[cfg(test)]
+#[cfg(test1)]
 mod test {
     use super::*;
     use crate::tests::new_glean;
@@ -1318,71 +931,6 @@ mod test {
                 .get(&reader, format!("{}#{}", test_storage, test_metric_id))
                 .unwrap_or(None)
                 .is_some());
-        }
-    }
-
-    #[test]
-    fn test_delayed_ping_lifetime_clear() {
-        // Init the database in a temporary directory.
-        let dir = tempdir().unwrap();
-        let db = Database::new(dir.path(), true).unwrap();
-        let test_storage = "test-storage";
-
-        assert!(db.ping_lifetime_data.is_some());
-
-        // Attempt to record a known value.
-        let test_value1 = "test-value1";
-        let test_metric_id1 = "telemetry_test.test_name1";
-        db.record_per_lifetime(
-            Lifetime::Ping,
-            test_storage,
-            test_metric_id1,
-            &Metric::String(test_value1.to_string()),
-        )
-        .unwrap();
-
-        {
-            let data = match &db.ping_lifetime_data {
-                Some(ping_lifetime_data) => ping_lifetime_data,
-                None => panic!("Expected `ping_lifetime_data` to exist here!"),
-            };
-            let data = data.read().unwrap();
-            // Verify that test_value1 is in memory.
-            assert!(data
-                .get(&format!("{}#{}", test_storage, test_metric_id1))
-                .is_some());
-        }
-
-        // Clear ping lifetime storage for a storage that isn't test_storage.
-        // Doesn't matter what it's called, just that it isn't test_storage.
-        db.clear_ping_lifetime_storage(&(test_storage.to_owned() + "x"))
-            .unwrap();
-
-        {
-            let data = match &db.ping_lifetime_data {
-                Some(ping_lifetime_data) => ping_lifetime_data,
-                None => panic!("Expected `ping_lifetime_data` to exist here!"),
-            };
-            let data = data.read().unwrap();
-            // Verify that test_value1 is still in memory.
-            assert!(data
-                .get(&format!("{}#{}", test_storage, test_metric_id1))
-                .is_some());
-        }
-
-        // Clear test_storage's ping lifetime storage.
-        db.clear_ping_lifetime_storage(test_storage).unwrap();
-
-        {
-            let data = match &db.ping_lifetime_data {
-                Some(ping_lifetime_data) => ping_lifetime_data,
-                None => panic!("Expected `ping_lifetime_data` to exist here!"),
-            };
-            let data = data.read().unwrap();
-            // Verify that test_value1 is no longer in memory.
-            assert!(data
-                .get(&format!("{}#{}", test_storage, test_metric_id1))
-                .is_none());
         }
     }
 

@@ -207,13 +207,16 @@ pub fn validate_dynamic_label(
     let key = combine_base_identifier_and_label(base_identifier, label);
     for store in &meta.send_in_pings {
         if glean.storage().has_metric(meta.lifetime, store, &key) {
+            dbg!("found metric", &key);
             return key;
         }
     }
 
     let mut label_count = 0;
     let prefix = &key[..=base_identifier.len()];
-    let mut snapshotter = |_: &[u8], _: &Metric| {
+    let mut snapshotter = |metric_id: &[u8], _: &Metric| {
+        let m = String::from_utf8_lossy(metric_id);
+        dbg!("snapshotter", m);
         label_count += 1;
     };
 
@@ -223,6 +226,7 @@ pub fn validate_dynamic_label(
             .storage()
             .iter_store_from(lifetime, store, Some(prefix), &mut snapshotter);
     }
+    dbg!("found metrics", label_count);
 
     let error = if label_count >= MAX_LABELS {
         true
