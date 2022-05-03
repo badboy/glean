@@ -2,10 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::fs;
 use std::num::NonZeroU64;
 use std::path::Path;
 use std::str;
-use std::fs;
 
 use rusqlite::{params, Connection, OpenFlags};
 
@@ -51,13 +51,22 @@ impl Database {
 
         fs::create_dir_all(&path)?;
         let sql_path = path.join("telemetry.db");
-        let conn = Connection::open_with_flags(sql_path, OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE).unwrap();
-        conn.execute(SCHEMA, []).unwrap();
-        conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(())).unwrap();
+        let conn = Connection::open_with_flags(
+            sql_path,
+            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
+        )?;
 
-        let db = Self {
-            conn,
-        };
+        #[cfg(target_os = "android")]
+        {
+            // `temp_store = 2` is required on Android to force the DB to keep temp
+            // files in memory, since on Android there's no tmp partition. See
+            // https://github.com/mozilla/mentat/issues/505.
+            db.set_pragma("temp_store", 2)?;
+        }
+        conn.pragma_update(None, "journal_mode", "WAL")?;
+        conn.execute(SCHEMA, [])?;
+
+        let db = Self { conn };
 
         Ok(db)
     }
@@ -112,22 +121,26 @@ impl Database {
             iter_sql.to_string()
         };
         dbg!(&iter_sql, lifetime, storage_name, metric_key);
-        let mut stmt = self.conn.prepare(&iter_sql).unwrap();
+        let mut stmt = unwrap_or!(self.conn.prepare(&iter_sql), return);
         let mut rows = if let Some(metric_key) = metric_key {
-            stmt.query(params![
-                lifetime.as_str().to_string(),
-                storage_name,
-                metric_key
-            ])
-            .unwrap()
+            unwrap_or!(
+                stmt.query(params![
+                    lifetime.as_str().to_string(),
+                    storage_name,
+                    metric_key
+                ]),
+                return
+            )
         } else {
-            stmt.query(params![lifetime.as_str().to_string(), storage_name])
-                .unwrap()
+            unwrap_or!(
+                stmt.query(params![lifetime.as_str().to_string(), storage_name]),
+                return
+            )
         };
 
         while let Ok(Some(row)) = rows.next() {
-            let metric_id: String = row.get(0).unwrap();
-            let blob: Vec<u8> = row.get(1).unwrap();
+            let metric_id: String = unwrap_or!(row.get(0), continue);
+            let blob: Vec<u8> = unwrap_or!(row.get(1), continue);
             let metric: Metric = match bincode::deserialize(&blob) {
                 Ok(metric) => metric,
                 _ => continue,
@@ -165,12 +178,13 @@ impl Database {
         "#;
 
         dbg!(has_metric_sql, lifetime, storage_name, metric_identifier);
-        let mut stmt = self.conn.prepare(has_metric_sql).unwrap();
-        let mut metric_iter = stmt
-            .query([lifetime.as_str(), storage_name, metric_identifier])
-            .unwrap();
+        let mut stmt = unwrap_or!(self.conn.prepare(has_metric_sql), return false);
+        let mut metric_iter = unwrap_or!(
+            stmt.query([lifetime.as_str(), storage_name, metric_identifier]),
+            return false
+        );
 
-        metric_iter.next().unwrap().is_some()
+        metric_iter.next().map(|m| m.is_some()).unwrap_or(false)
     }
 
     /// Records a metric in the underlying storage system.
@@ -219,10 +233,9 @@ impl Database {
         "#;
 
         dbg!(insert_sql, lifetime, storage_name, key, metric);
-        let mut stmt = self.conn.prepare(insert_sql).unwrap();
+        let mut stmt = self.conn.prepare(insert_sql)?;
         let encoded = bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
-        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])
-            .unwrap();
+        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
 
         Ok(())
     }
@@ -281,13 +294,11 @@ impl Database {
         LIMIT 1
         "#;
 
-        let mut stmt = self.conn.prepare(&find_sql).unwrap();
-        let mut rows = stmt
-            .query(params![lifetime.as_str().to_string(), storage_name, key])
-            .unwrap();
+        let mut stmt = self.conn.prepare(&find_sql)?;
+        let mut rows = stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
 
         let new_value = if let Ok(Some(row)) = rows.next() {
-            let blob: Vec<u8> = row.get(0).unwrap();
+            let blob: Vec<u8> = row.get(0)?;
             let old_value = bincode::deserialize(&blob).ok();
             transform(old_value)
         } else {
@@ -306,10 +317,10 @@ impl Database {
         "#;
 
         dbg!(insert_sql, lifetime, storage_name, key, &new_value);
-        let mut stmt = self.conn.prepare(insert_sql).unwrap();
-        let encoded = bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])
-            .unwrap();
+        let mut stmt = self.conn.prepare(insert_sql)?;
+        let encoded =
+            bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
+        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
         Ok(())
     }
 
@@ -328,8 +339,8 @@ impl Database {
     /// This function will **not** panic on database errors.
     pub fn clear_ping_lifetime_storage(&self, storage_name: &str) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2";
-        let mut stmt = self.conn.prepare(clear_sql).unwrap();
-        stmt.execute([Lifetime::Ping.as_str(), storage_name]).map_err(|_| crate::Error::not_initialized())?;
+        let mut stmt = self.conn.prepare(clear_sql)?;
+        stmt.execute([Lifetime::Ping.as_str(), storage_name])?;
         Ok(())
     }
 
@@ -358,8 +369,8 @@ impl Database {
         metric_id: &str,
     ) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2 AND id = ?3";
-        let mut stmt = self.conn.prepare(clear_sql).unwrap();
-        stmt.execute([lifetime.as_str(), storage_name, metric_id]).map_err(|_| crate::Error::not_initialized())?;
+        let mut stmt = self.conn.prepare(clear_sql)?;
+        stmt.execute([lifetime.as_str(), storage_name, metric_id])?;
         Ok(())
     }
 
@@ -372,7 +383,7 @@ impl Database {
     /// * This function will **not** panic on database errors.
     pub fn clear_lifetime(&self, lifetime: Lifetime) {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1";
-        let mut stmt = self.conn.prepare(clear_sql).unwrap();
+        let mut stmt = unwrap_or!(self.conn.prepare(clear_sql), return);
         let res = stmt.execute([lifetime.as_str()]);
 
         if let Err(e) = res {

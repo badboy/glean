@@ -22,6 +22,10 @@ use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 use uuid::Uuid;
 
+// This needs to be included first, and the space below prevents rustfmt from
+// alphabetizing it.
+mod macros;
+
 mod common_metric_data;
 mod coverage;
 mod database;

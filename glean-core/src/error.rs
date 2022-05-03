@@ -67,6 +67,9 @@ pub enum ErrorKind {
 
     /// Ping request body size overflowed
     PingBodyOverflow(usize),
+
+    /// Database/SQLite error
+    SQLite(rusqlite::Error),
 }
 
 /// A specialized [`Error`] type for this crate's operations.
@@ -123,6 +126,7 @@ impl Display for Error {
                 "Ping request body size exceeded maximum size allowed: {}kB.",
                 s / 1024
             ),
+            SQLite(e) => write!(f, "SQLite error: {}", e),
         }
     }
 }
@@ -167,6 +171,14 @@ impl From<serde_json::error::Error> for Error {
     fn from(error: serde_json::error::Error) -> Error {
         Error {
             kind: ErrorKind::Json(error),
+        }
+    }
+}
+
+impl From<rusqlite::Error> for Error {
+    fn from(error: rusqlite::Error) -> Error {
+        Error {
+            kind: ErrorKind::SQLite(error),
         }
     }
 }
