@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS telemetry
   updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
   UNIQUE(id, ping)
 )
-
 "#;
 
 pub struct Database {
@@ -75,7 +74,9 @@ impl Database {
         conn.execute(SCHEMA, [])?;
         conn.set_prepared_statement_cache_capacity(128);
 
-        let db = Self { conn: AssertUnwindSafe(conn) };
+        let db = Self {
+            conn: AssertUnwindSafe(conn),
+        };
 
         Ok(db)
     }
@@ -292,7 +293,6 @@ impl Database {
     where
         F: FnMut(Option<Metric>) -> Metric,
     {
-        // TODO: Do this in a transaction
         let find_sql = r#"
         SELECT value
         FROM telemetry
@@ -303,15 +303,18 @@ impl Database {
         LIMIT 1
         "#;
 
-        let mut stmt = self.conn.prepare_cached(&find_sql)?;
-        let mut rows = stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
+        let tx = self.conn.unchecked_transaction()?;
+        let new_value = {
+            let mut stmt = tx.prepare_cached(&find_sql)?;
+            let mut rows = stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
 
-        let new_value = if let Ok(Some(row)) = rows.next() {
-            let blob: Vec<u8> = row.get(0)?;
-            let old_value = bincode::deserialize(&blob).ok();
-            transform(old_value)
-        } else {
-            transform(None)
+            if let Ok(Some(row)) = rows.next() {
+                let blob: Vec<u8> = row.get(0)?;
+                let old_value = bincode::deserialize(&blob).ok();
+                transform(old_value)
+            } else {
+                transform(None)
+            }
         };
 
         let insert_sql = r#"
@@ -326,10 +329,14 @@ impl Database {
         "#;
 
         dbg!(insert_sql, lifetime, storage_name, key, &new_value);
-        let mut stmt = self.conn.prepare_cached(insert_sql)?;
-        let encoded =
-            bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
+        {
+            let mut stmt = tx.prepare_cached(insert_sql)?;
+            let encoded =
+                bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
+            stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
+        }
+
+        tx.commit()?;
         Ok(())
     }
 
