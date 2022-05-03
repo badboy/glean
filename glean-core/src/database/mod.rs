@@ -4,6 +4,7 @@
 
 use std::fs;
 use std::num::NonZeroU64;
+use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::str;
 
@@ -29,7 +30,10 @@ CREATE TABLE IF NOT EXISTS telemetry
 "#;
 
 pub struct Database {
-    conn: Connection,
+    /// The database connection.
+    ///
+    /// FIXME: It's probably not unwind safe.
+    conn: AssertUnwindSafe<Connection>,
 }
 
 impl std::fmt::Debug for Database {
@@ -66,7 +70,7 @@ impl Database {
         conn.pragma_update(None, "journal_mode", "WAL")?;
         conn.execute(SCHEMA, [])?;
 
-        let db = Self { conn };
+        let db = Self { conn: AssertUnwindSafe(conn) };
 
         Ok(db)
     }
