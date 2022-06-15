@@ -113,6 +113,8 @@ pub struct InternalConfiguration {
     pub app_build: String,
     /// Whether Glean should schedule "metrics" pings.
     pub use_core_mps: bool,
+    /// If `use_core_mps` is true, this is the hour the `metrics` ping is sent. Defaults to 4am.
+    pub scheduled_hour: Option<u32>,
 }
 
 /// Launches a new task on the global dispatch queue with a reference to the Glean singleton.

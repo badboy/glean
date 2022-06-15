@@ -129,6 +129,7 @@ pub struct Glean {
     debug: DebugOptions,
     pub(crate) app_build: String,
     pub(crate) schedule_metrics_pings: bool,
+    pub(crate) scheduled_hour: u32,
 }
 
 impl Glean {
@@ -181,6 +182,7 @@ impl Glean {
             app_build: cfg.app_build.to_string(),
             // Subprocess doesn't use "metrics" pings so has no need for a scheduler.
             schedule_metrics_pings: false,
+            scheduled_hour: cfg.scheduled_hour.unwrap_or(scheduler::SCHEDULED_HOUR),
         };
 
         // Ensuring these pings are registered.

@@ -61,6 +61,7 @@ dictionary InternalConfiguration {
     boolean delay_ping_lifetime_io;
     string app_build;
     boolean use_core_mps;
+    u32? scheduled_hour;
 };
 
 // Values for the `client_info` metrics.

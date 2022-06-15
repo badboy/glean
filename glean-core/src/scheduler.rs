@@ -18,7 +18,7 @@ use once_cell::sync::Lazy;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread::JoinHandle;
 
-const SCHEDULED_HOUR: u32 = 4;
+pub(crate) const SCHEDULED_HOUR: u32 = 4;
 
 // Clippy thinks an AtomicBool would be preferred, but Condvar requires a full Mutex.
 // See https://github.com/rust-lang/rust-clippy/issues/1516
@@ -46,6 +46,9 @@ trait MetricsPingScheduler {
         now: DateTime<FixedOffset>,
         when: When,
     );
+
+    /// FIXME
+    fn scheduled_hour(&self) -> u32;
 }
 
 /// Uses Glean to submit "metrics" pings directly.
@@ -59,7 +62,10 @@ impl MetricsPingSubmitter for GleanMetricsPingSubmitter {
 }
 
 /// Schedule "metrics" pings directly using the default behaviour.
-struct GleanMetricsPingScheduler {}
+struct GleanMetricsPingScheduler {
+    scheduled_hour: u32
+}
+
 impl MetricsPingScheduler for GleanMetricsPingScheduler {
     fn start_scheduler(
         &self,
@@ -68,6 +74,10 @@ impl MetricsPingScheduler for GleanMetricsPingScheduler {
         when: When,
     ) {
         start_scheduler(submitter, now, when);
+    }
+
+    fn scheduled_hour(&self) -> u32 {
+        self.scheduled_hour
     }
 }
 
@@ -84,7 +94,7 @@ pub fn schedule(glean: &Glean) {
     *cancelled_lock.lock().unwrap() = false; // Uncancel the thread.
 
     let submitter = GleanMetricsPingSubmitter {};
-    let scheduler = GleanMetricsPingScheduler {};
+    let scheduler = GleanMetricsPingScheduler { scheduled_hour: glean.scheduled_hour };
 
     schedule_internal(glean, submitter, scheduler, now)
 }
@@ -136,7 +146,7 @@ fn schedule_internal(
         // Case #1
         log::info!("The 'metrics' ping was already sent today, {}", now);
         scheduler.start_scheduler(submitter, now, When::Tomorrow);
-    } else if now > now.date().and_hms(SCHEDULED_HOUR, 0, 0) {
+    } else if now > now.date().and_hms(scheduler.scheduled_hour(), 0, 0) {
         // Case #2
         log::info!("Sending the 'metrics' ping immediately, {}", now);
         submitter.submit_metrics_ping(glean, Some("overdue"), now);
