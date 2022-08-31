@@ -25,7 +25,7 @@ mod metrics {
                 category: "sample".into(),
                 send_in_pings: vec!["validation".into()],
                 lifetime: Lifetime::Ping,
-                disabled: false,
+                disabled: 0,
                 ..Default::default()
             },
             TimeUnit::Nanosecond,

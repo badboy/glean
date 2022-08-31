@@ -20,7 +20,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), .nanosecond)
 
         XCTAssertNil(metric.testGetValue())
@@ -65,7 +65,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second)
 
         XCTAssertNil(metric.testGetValue())
@@ -78,7 +78,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1", "store2", "store3"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second)
 
         // Accumulate a few values
@@ -106,7 +106,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
             ), .nanosecond
         )
 
@@ -126,7 +126,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
             ), .nanosecond
         )
 
@@ -141,7 +141,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
             ), .nanosecond
         )
 
@@ -174,7 +174,7 @@ class TimingDistributionTypeTests: XCTestCase {
             name: "timing_distribution",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
             ), .nanosecond
         )
 

@@ -20,7 +20,7 @@ fn can_create_labeled_counter_metric() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -52,7 +52,7 @@ fn can_create_labeled_string_metric() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -84,7 +84,7 @@ fn can_create_labeled_bool_metric() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -116,7 +116,7 @@ fn can_use_multiple_labels() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -154,7 +154,7 @@ fn can_record_error_for_submetric() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -179,7 +179,7 @@ fn labels_are_checked_against_static_list() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -224,7 +224,7 @@ fn dynamic_labels_too_long() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -259,7 +259,7 @@ fn dynamic_labels_regex_mismatch() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -306,7 +306,7 @@ fn dynamic_labels_regex_allowed() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -361,7 +361,7 @@ fn seen_labels_get_reloaded_from_disk() {
             name: "labeled_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -428,7 +428,7 @@ fn caching_metrics_with_dynamic_labels() {
             name: "cached_labels".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -462,7 +462,7 @@ fn caching_metrics_with_dynamic_labels_across_pings() {
             name: "cached_labels2".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },

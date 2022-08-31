@@ -19,7 +19,7 @@ pub mod error {
             name: "preinit_tasks_overflow".into(),
             send_in_pings: vec!["metrics".into()],
             lifetime: Lifetime::Ping,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });

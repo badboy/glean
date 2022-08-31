@@ -67,7 +67,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -78,7 +78,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -90,7 +90,7 @@ pub mod internal_metrics {
                 category: "".into(),
                 send_in_pings: vec!["glean_client_info".into()],
                 lifetime: Lifetime::Application,
-                disabled: false,
+                disabled: 0,
                 ..Default::default()
             },
             TimeUnit::Second,
@@ -103,7 +103,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -114,7 +114,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -125,7 +125,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -136,7 +136,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -147,7 +147,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -158,7 +158,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -169,7 +169,7 @@ pub mod internal_metrics {
             category: "".into(),
             send_in_pings: vec!["glean_client_info".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             ..Default::default()
         })
     });
@@ -181,7 +181,7 @@ pub mod internal_metrics {
                 category: "glean.baseline".into(),
                 send_in_pings: vec!["baseline".into()],
                 lifetime: Lifetime::Ping,
-                disabled: false,
+                disabled: 0,
                 ..Default::default()
             },
             TimeUnit::Second,

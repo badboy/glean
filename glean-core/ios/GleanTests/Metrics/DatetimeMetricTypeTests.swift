@@ -49,7 +49,7 @@ class DatetimeMetricTypeTests: XCTestCase {
             name: "datetime_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .minute)
 
         testDatetime(metric: datetimeMetric,
@@ -90,7 +90,7 @@ class DatetimeMetricTypeTests: XCTestCase {
             name: "datetime_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .minute)
 
         XCTAssertNil(datetimeMetric.testGetValue())
@@ -102,7 +102,7 @@ class DatetimeMetricTypeTests: XCTestCase {
             name: "datetime_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .minute)
 
         let timeZone = TimeZone(identifier: "America/Los_Angeles")

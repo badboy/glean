@@ -20,7 +20,7 @@ pub mod glean_metrics {
                 name: "sample_boolean".into(),
                 category: "test.metrics".into(),
                 send_in_pings: vec!["prototype".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             })

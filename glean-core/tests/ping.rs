@@ -131,7 +131,7 @@ fn test_pings_submitted_metric() {
             category: "glean.validation".into(),
             send_in_pings: vec!["metrics".into(), "baseline".into()],
             lifetime: Lifetime::Ping,
-            disabled: false,
+            disabled: 0,
             dynamic_label: None,
         },
         None,

@@ -20,7 +20,7 @@ class StringMetricTests: XCTestCase {
             name: "string_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(stringMetric.testGetValue())
@@ -55,7 +55,7 @@ class StringMetricTests: XCTestCase {
             name: "string_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(stringMetric.testGetValue())
@@ -67,7 +67,7 @@ class StringMetricTests: XCTestCase {
             name: "string_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         stringMetric.set("value")
@@ -85,7 +85,7 @@ class StringMetricTests: XCTestCase {
             name: "string_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         stringMetric.set(String(repeating: "0123456789", count: 11))

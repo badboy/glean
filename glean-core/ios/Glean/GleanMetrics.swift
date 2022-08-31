@@ -18,7 +18,7 @@
 ///             name: "counts",
 ///             sendInPings: ["metrics"],
 ///             lifetime: .application,
-///             disabled: false
+///             disabled: 0
 ///         )
 ///     }
 /// }

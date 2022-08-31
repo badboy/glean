@@ -20,7 +20,7 @@ class QuantityMetricTypeTests: XCTestCase {
             name: "quantity_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(quantityMetric.testGetValue())
@@ -57,7 +57,7 @@ class QuantityMetricTypeTests: XCTestCase {
             name: "quantity_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(quantityMetric.testGetValue())
@@ -69,7 +69,7 @@ class QuantityMetricTypeTests: XCTestCase {
             name: "quantity_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         quantityMetric.set(1)
@@ -88,7 +88,7 @@ class QuantityMetricTypeTests: XCTestCase {
             name: "quantity_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         quantityMetric.set(1)

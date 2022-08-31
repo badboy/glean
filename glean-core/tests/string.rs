@@ -29,7 +29,7 @@ fn string_serializer_should_correctly_serialize_strings() {
             name: "string_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::User,
             ..Default::default()
         });
@@ -68,7 +68,7 @@ fn set_properly_sets_the_value_in_all_stores() {
         name: "string_metric".into(),
         category: "telemetry".into(),
         send_in_pings: store_names.clone(),
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -99,7 +99,7 @@ fn long_string_values_are_truncated() {
         name: "string_metric".into(),
         category: "telemetry".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });

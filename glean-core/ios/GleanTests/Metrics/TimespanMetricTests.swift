@@ -20,7 +20,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ),
             .millisecond
         )
@@ -61,7 +61,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .millisecond
         )
 
@@ -79,7 +79,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .millisecond
         )
 
@@ -92,7 +92,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second)
 
         // Record a timespan.
@@ -108,7 +108,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second
         )
         let timespanNanos: Int64 = 6 * 1_000_000_000
@@ -123,7 +123,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second)
         let timespanNanos: Int64 = 6 * 1_000_000_000
 
@@ -141,7 +141,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .second)
         let timespanNanos: Int64 = 6 * 1_000_000_000
 
@@ -160,7 +160,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .nanosecond)
         let timespanNanos: Int64 = 6 * 1_000_000_000
 
@@ -177,7 +177,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .nanosecond)
 
         metric.start()
@@ -193,7 +193,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .millisecond)
 
         XCTAssertNil(metric.testGetValue())
@@ -224,7 +224,7 @@ class TimespanMetricTypeTests: XCTestCase {
             name: "timespan_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), .millisecond)
 
         XCTAssertNil(metric.testGetValue())

@@ -20,7 +20,7 @@ class StringListMetricTests: XCTestCase {
             name: "string_list_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Record by adding values
@@ -50,7 +50,7 @@ class StringListMetricTests: XCTestCase {
             name: "string_list_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Record by setting the list
@@ -97,7 +97,7 @@ class StringListMetricTests: XCTestCase {
             name: "string_list_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(stringListMetric.testGetValue())
@@ -109,7 +109,7 @@ class StringListMetricTests: XCTestCase {
             name: "string_list_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         stringListMetric.add("value1")
@@ -138,7 +138,7 @@ class StringListMetricTests: XCTestCase {
             name: "string_list_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         for n in 0 ... 20 {

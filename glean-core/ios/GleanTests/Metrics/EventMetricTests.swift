@@ -103,7 +103,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["object_id", "other"]
         )
 
@@ -147,7 +147,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["object_id"])
 
         XCTAssertNil(metric.testGetValue())
@@ -189,7 +189,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), nil)
 
         XCTAssertNil(metric.testGetValue())
@@ -201,7 +201,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1", "store2"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["object_id"])
 
         XCTAssertNil(metric.testGetValue())
@@ -230,7 +230,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1", "store2"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["test_name"])
 
         Glean.shared.setUploadEnabled(true)
@@ -257,7 +257,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "test_event",
             sendInPings: ["events"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["some_extra"])
 
         event.record(extra: [.someExtra: "bar"])
@@ -288,7 +288,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "test_event",
             sendInPings: ["events"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["some_extra"])
 
         event.record(extra: [.someExtra: "run1"])
@@ -332,7 +332,7 @@ class EventMetricTypeTests: XCTestCase {
             name: "click",
             sendInPings: ["store1", "store2"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["test_name"])
 
         metric.record(extra: [.testName: String(repeating: "0123456789", count: 11)])

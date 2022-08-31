@@ -55,7 +55,7 @@ fn uuid_serializer_should_correctly_serialize_uuids() {
             name: "uuid_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::User,
             ..Default::default()
         });
@@ -95,7 +95,7 @@ fn set_properly_sets_the_value_in_all_stores() {
         name: "uuid_metric".into(),
         category: "telemetry".into(),
         send_in_pings: store_names.clone(),
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });

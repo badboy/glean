@@ -20,7 +20,7 @@ class UuidMetricTypeTests: XCTestCase {
             name: "uuid_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Check that there is no UUID recorded
@@ -61,7 +61,7 @@ class UuidMetricTypeTests: XCTestCase {
             name: "uuid_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(uuidMetric.testGetValue())
@@ -73,7 +73,7 @@ class UuidMetricTypeTests: XCTestCase {
             name: "uuid_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Record two UUID's of the same type, with a little delay

@@ -73,7 +73,7 @@ fn disabling_upload_disables_metrics_recording() {
         category: "test".into(),
         send_in_pings: vec!["store1".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         dynamic_label: None,
     });
 
@@ -159,7 +159,7 @@ fn sending_of_foreground_background_pings() {
         category: "ui".into(),
         send_in_pings: vec!["events".into()],
         lifetime: Lifetime::Ping,
-        disabled: false,
+        disabled: 0,
         ..Default::default()
     });
 
@@ -383,7 +383,7 @@ fn queued_recorded_metrics_correctly_record_during_init() {
         category: "test".into(),
         send_in_pings: vec!["store1".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         dynamic_label: None,
     });
 
@@ -472,7 +472,7 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
         category: "".into(),
         send_in_pings: vec!["glean_client_info".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         ..Default::default()
     });
 
@@ -536,7 +536,7 @@ fn basic_metrics_should_be_cleared_when_disabling_uploading() {
         category: "telemetry".into(),
         send_in_pings: vec!["default".into()],
         lifetime: Lifetime::Ping,
-        disabled: false,
+        disabled: 0,
         ..Default::default()
     });
 
@@ -586,7 +586,7 @@ fn core_metrics_should_be_cleared_and_restored_when_disabling_and_enabling_uploa
         category: "".into(),
         send_in_pings: vec!["glean_client_info".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         ..Default::default()
     });
 
@@ -973,7 +973,7 @@ fn flipping_upload_enabled_respects_order_of_events() {
         category: "telemetry".into(),
         send_in_pings: vec!["sample-ping-1".into()],
         lifetime: Lifetime::Ping,
-        disabled: false,
+        disabled: 0,
         ..Default::default()
     });
 
@@ -1095,7 +1095,7 @@ fn test_a_ping_before_submission() {
         category: "test".into(),
         send_in_pings: vec!["custom1".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         dynamic_label: None,
     });
 
@@ -1125,7 +1125,7 @@ fn test_boolean_get_num_errors() {
         category: "test".into(),
         send_in_pings: vec!["custom1".into()],
         lifetime: Lifetime::Application,
-        disabled: false,
+        disabled: 0,
         dynamic_label: Some(str::to_string("asdf")),
     });
 

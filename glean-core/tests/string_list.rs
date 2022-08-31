@@ -55,7 +55,7 @@ fn stringlist_serializer_should_correctly_serialize_stringlists() {
             name: "string_list_metric".into(),
             category: "telemetry.test".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::User,
             ..Default::default()
         });
@@ -84,7 +84,7 @@ fn set_properly_sets_the_value_in_all_stores() {
         name: "string_list_metric".into(),
         category: "telemetry.test".into(),
         send_in_pings: store_names.clone(),
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -111,7 +111,7 @@ fn long_string_values_are_truncated() {
         name: "string_list_metric".into(),
         category: "telemetry.test".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -154,7 +154,7 @@ fn disabled_string_lists_dont_record() {
         name: "string_list_metric".into(),
         category: "telemetry.test".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: true,
+        disabled: 1,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -181,7 +181,7 @@ fn string_lists_dont_exceed_max_items() {
         name: "string_list_metric".into(),
         category: "telemetry.test".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -230,7 +230,7 @@ fn set_does_not_record_error_when_receiving_empty_list() {
         name: "string_list_metric".into(),
         category: "telemetry.test".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });

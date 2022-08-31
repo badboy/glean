@@ -22,7 +22,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledCounterMetric = try! LabeledMetricType<CounterMetricType>(
@@ -30,7 +30,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric
         )
 
@@ -53,7 +53,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledCounterMetric = try! LabeledMetricType<CounterMetricType>(
@@ -61,7 +61,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric,
             labels: ["foo", "bar", "baz"]
         )
@@ -86,7 +86,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledCounterMetric = try! LabeledMetricType<CounterMetricType>(
@@ -94,7 +94,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric
         )
 
@@ -118,7 +118,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledCounterMetric = try! LabeledMetricType<CounterMetricType>(
@@ -126,7 +126,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric
         )
 
@@ -149,7 +149,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledStringMetric = try! LabeledMetricType<StringMetricType>(
@@ -157,7 +157,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric
         )
 
@@ -174,7 +174,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_boolean_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledBooleanMetric = try! LabeledMetricType<BooleanMetricType>(
@@ -182,7 +182,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_boolean_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: booleanMetric
         )
 
@@ -199,7 +199,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_event",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), nil)
 
         XCTAssertThrowsError(try LabeledMetricType<EventMetricType<NoExtraKeys, NoExtras>>(
@@ -207,7 +207,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_event_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: eventMetric
         )) { error in
             XCTAssertEqual(error as! String, "Can not create a labeled version of this metric type")
@@ -226,7 +226,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_nocrash_counter",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         let labeledCounterMetric = try! LabeledMetricType<CounterMetricType>(
@@ -234,7 +234,7 @@ class LabeledMetricTypeTests: XCTestCase {
             name: "labeled_nocrash",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false,
+            disabled: 0,
             subMetric: counterMetric,
             labels: ["foo"]
         )

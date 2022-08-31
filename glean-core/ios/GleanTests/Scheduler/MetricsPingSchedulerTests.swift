@@ -156,7 +156,7 @@ class MetricsPingSchedulerTests: XCTestCase {
             name: "expected_metric",
             sendInPings: ["metrics"],
             lifetime: Lifetime.ping,
-            disabled: false
+            disabled: 0
         ))
         let expectedValue = "must-exist-in-the-first-ping"
 
@@ -174,7 +174,7 @@ class MetricsPingSchedulerTests: XCTestCase {
             name: "canary_metric",
             sendInPings: ["metrics"],
             lifetime: Lifetime.ping,
-            disabled: false
+            disabled: 0
         ))
         let canaryValue = "must-not-be-in-the-first-ping"
         stringMetric.set(canaryValue)
@@ -244,7 +244,7 @@ class MetricsPingSchedulerTests: XCTestCase {
             name: "test_applifetime_metric",
             sendInPings: ["metrics"],
             lifetime: Lifetime.application,
-            disabled: false
+            disabled: 0
         ))
         let expectedValue = "I-will-survive!"
 

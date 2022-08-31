@@ -20,7 +20,7 @@ class BooleanMetricTypeTests: XCTestCase {
             name: "boolean_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(booleanMetric.testGetValue())
@@ -57,7 +57,7 @@ class BooleanMetricTypeTests: XCTestCase {
             name: "boolean_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(booleanMetric.testGetValue())
@@ -69,7 +69,7 @@ class BooleanMetricTypeTests: XCTestCase {
             name: "boolean_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Record two booleans of the same type, with a little delay.

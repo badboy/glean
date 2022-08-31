@@ -20,7 +20,7 @@ class UrlMetricTypeTests: XCTestCase {
             name: "url_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(urlMetric.testGetValue())
@@ -58,7 +58,7 @@ class UrlMetricTypeTests: XCTestCase {
             name: "url_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(urlMetric.testGetValue())
@@ -70,7 +70,7 @@ class UrlMetricTypeTests: XCTestCase {
             name: "url_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         urlMetric.set("glean://value")
@@ -88,7 +88,7 @@ class UrlMetricTypeTests: XCTestCase {
             name: "url_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Whenever the URL is longer than our MAX_URL_LENGTH, we truncate the URL to the
@@ -118,7 +118,7 @@ class UrlMetricTypeTests: XCTestCase {
             name: "url_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(urlMetric.testGetValue())

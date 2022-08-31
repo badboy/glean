@@ -20,7 +20,7 @@ class RateMetricTypeTests: XCTestCase {
             name: "rate_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(rateMetric.testGetValue())
@@ -56,7 +56,7 @@ class RateMetricTypeTests: XCTestCase {
             name: "rate1",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         )
 
         let meta2 = CommonMetricData(
@@ -64,7 +64,7 @@ class RateMetricTypeTests: XCTestCase {
             name: "rate2",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         )
 
         let denom = DenominatorMetricType(CommonMetricData(
@@ -72,7 +72,7 @@ class RateMetricTypeTests: XCTestCase {
             name: "counter",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ), [meta1, meta2])
 
         let num1 = NumeratorMetricType(meta1)

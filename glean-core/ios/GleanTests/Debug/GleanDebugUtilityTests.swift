@@ -68,7 +68,7 @@ class GleanDebugUtilityTests: XCTestCase {
             name: "click",
             sendInPings: ["events"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
         ), ["object_id", "other"])
         event.record()
 
@@ -77,7 +77,7 @@ class GleanDebugUtilityTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["metrics"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
         metric.add()
 

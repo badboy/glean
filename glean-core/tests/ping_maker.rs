@@ -21,7 +21,7 @@ fn set_up_basic_ping() -> (Glean, PingMaker, PingType, tempfile::TempDir) {
         name: "boolean_metric".into(),
         category: "telemetry".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::User,
         ..Default::default()
     });
@@ -98,7 +98,7 @@ fn seq_number_must_be_sequential() {
         name: "boolean_metric".into(),
         category: "telemetry".into(),
         send_in_pings: vec!["store2".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::User,
         ..Default::default()
     });
@@ -171,7 +171,7 @@ fn clear_pending_pings() {
         name: "boolean_metric".into(),
         category: "telemetry".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::User,
         ..Default::default()
     });

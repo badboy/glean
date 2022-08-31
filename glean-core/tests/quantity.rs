@@ -31,7 +31,7 @@ fn quantity_serializer_should_correctly_serialize_quantities() {
             name: "quantity_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::User,
             ..Default::default()
         });
@@ -70,7 +70,7 @@ fn set_value_properly_sets_the_value_in_all_stores() {
         name: "quantity_metric".into(),
         category: "telemetry".into(),
         send_in_pings: store_names.clone(),
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });
@@ -100,7 +100,7 @@ fn quantities_must_not_set_when_passed_negative() {
         name: "quantity_metric".into(),
         category: "telemetry".into(),
         send_in_pings: vec!["store1".into()],
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Application,
         ..Default::default()
     });

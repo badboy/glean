@@ -30,7 +30,7 @@ mod linear {
                     name: "distribution".into(),
                     category: "telemetry".into(),
                     send_in_pings: vec!["store1".into()],
-                    disabled: false,
+                    disabled: 0,
                     lifetime: Lifetime::Ping,
                     ..Default::default()
                 },
@@ -74,7 +74,7 @@ mod linear {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: store_names.clone(),
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -114,7 +114,7 @@ mod linear {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -157,7 +157,7 @@ mod linear {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -199,7 +199,7 @@ mod linear {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -232,7 +232,7 @@ mod exponential {
                     name: "distribution".into(),
                     category: "telemetry".into(),
                     send_in_pings: vec!["store1".into()],
-                    disabled: false,
+                    disabled: 0,
                     lifetime: Lifetime::Ping,
                     ..Default::default()
                 },
@@ -276,7 +276,7 @@ mod exponential {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: store_names.clone(),
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -316,7 +316,7 @@ mod exponential {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -359,7 +359,7 @@ mod exponential {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -401,7 +401,7 @@ mod exponential {
                 name: "distribution".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },

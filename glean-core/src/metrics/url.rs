@@ -174,7 +174,7 @@ mod test {
             category: "test".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             dynamic_label: None,
         });
 
@@ -192,7 +192,7 @@ mod test {
             category: "test".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             dynamic_label: None,
         });
 
@@ -230,7 +230,7 @@ mod test {
             category: "test".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             dynamic_label: None,
         });
 
@@ -254,7 +254,7 @@ mod test {
             category: "test".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
-            disabled: false,
+            disabled: 0,
             dynamic_label: None,
         });
 

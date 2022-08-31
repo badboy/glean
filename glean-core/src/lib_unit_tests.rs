@@ -659,7 +659,7 @@ fn test_change_metric_type_runtime() {
         name: metric_name.into(),
         category: metric_category.into(),
         send_in_pings: vec![ping_name.into()],
-        disabled: false,
+        disabled: 0,
         lifetime: metric_lifetime,
         ..Default::default()
     });
@@ -678,7 +678,7 @@ fn test_change_metric_type_runtime() {
             name: metric_name.into(),
             category: metric_category.into(),
             send_in_pings: vec![ping_name.into()],
-            disabled: false,
+            disabled: 0,
             lifetime: metric_lifetime,
             ..Default::default()
         },

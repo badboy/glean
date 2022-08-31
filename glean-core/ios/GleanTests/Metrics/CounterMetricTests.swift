@@ -20,7 +20,7 @@ class CounterMetricTypeTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(counterMetric.testGetValue())
@@ -60,7 +60,7 @@ class CounterMetricTypeTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         XCTAssertNil(counterMetric.testGetValue())
@@ -72,7 +72,7 @@ class CounterMetricTypeTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         counterMetric.add(1)
@@ -88,7 +88,7 @@ class CounterMetricTypeTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["store1", "store2"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         // Increment to 1 (initial value)

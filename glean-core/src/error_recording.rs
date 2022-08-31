@@ -194,7 +194,7 @@ mod test {
             name: "string_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into(), "store2".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::User,
             ..Default::default()
         });

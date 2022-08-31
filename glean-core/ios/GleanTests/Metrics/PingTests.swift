@@ -47,7 +47,7 @@ class PingTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["custom"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         setupHttpResponseStub("custom")
@@ -92,7 +92,7 @@ class PingTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["custom"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         setupHttpResponseStub("custom")
@@ -117,7 +117,7 @@ class PingTests: XCTestCase {
             name: "counter_metric",
             sendInPings: ["unknown", "baseline"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
         ))
 
         counter.add()

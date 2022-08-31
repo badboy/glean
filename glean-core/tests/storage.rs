@@ -46,7 +46,7 @@ fn snapshot_correctly_clears_the_stores() {
         name: "metric".into(),
         category: "telemetry".into(),
         send_in_pings: store_names,
-        disabled: false,
+        disabled: 0,
         lifetime: Lifetime::Ping,
         ..Default::default()
     });

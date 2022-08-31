@@ -33,7 +33,7 @@ fn serializer_should_correctly_serialize_timespans() {
                 name: "timespan_metric".into(),
                 category: "telemetry".into(),
                 send_in_pings: vec!["store1".into()],
-                disabled: false,
+                disabled: 0,
                 lifetime: Lifetime::Ping,
                 ..Default::default()
             },
@@ -73,7 +73,7 @@ fn single_elapsed_time_must_be_recorded() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -103,7 +103,7 @@ fn second_timer_run_is_skipped() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -143,7 +143,7 @@ fn recorded_time_conforms_to_resolution() {
             name: "timespan_ns".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -155,7 +155,7 @@ fn recorded_time_conforms_to_resolution() {
             name: "timespan_m".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -189,7 +189,7 @@ fn cancel_does_not_store() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -211,7 +211,7 @@ fn nothing_stored_before_stop() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -237,7 +237,7 @@ fn set_raw_time() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -260,7 +260,7 @@ fn set_raw_time_does_nothing_when_timer_running() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -292,7 +292,7 @@ fn timespan_is_not_tracked_across_upload_toggle() {
             name: "timespan_metric".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },

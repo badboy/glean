@@ -22,7 +22,7 @@ fn record_properly_records_without_optional_arguments() {
             name: "test_event_no_optional".into(),
             category: "telemetry".into(),
             send_in_pings: store_names.clone(),
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -51,7 +51,7 @@ fn record_properly_records_with_optional_arguments() {
             name: "test_event_no_optional".into(),
             category: "telemetry".into(),
             send_in_pings: store_names.clone(),
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -105,7 +105,7 @@ fn snapshot_correctly_clears_the_stores() {
             name: "test_event_clear".into(),
             category: "telemetry".into(),
             send_in_pings: store_names,
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -168,7 +168,7 @@ fn test_sending_of_event_ping_when_it_fills_up() {
             name: "click".into(),
             category: "ui".into(),
             send_in_pings: store_names,
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -222,7 +222,7 @@ fn extra_keys_must_be_recorded_and_truncated_if_needed() {
             name: "testEvent".into(),
             category: "ui".into(),
             send_in_pings: store_names,
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },
@@ -261,7 +261,7 @@ fn snapshot_sorts_the_timestamps() {
             name: "test_event_clear".into(),
             category: "telemetry".into(),
             send_in_pings: vec!["store1".into()],
-            disabled: false,
+            disabled: 0,
             lifetime: Lifetime::Ping,
             ..Default::default()
         },

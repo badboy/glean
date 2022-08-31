@@ -68,7 +68,7 @@ pub struct CommonMetricData {
     /// Whether or not the metric is disabled.
     ///
     /// Disabled metrics are never recorded.
-    pub disabled: bool,
+    pub disabled: u8,
     /// Dynamic label.
     ///
     /// When a [`LabeledMetric<T>`](crate::metrics::LabeledMetric) factory creates the specific
@@ -121,7 +121,7 @@ impl CommonMetricData {
 
     /// Whether this metric should be recorded.
     pub fn should_record(&self) -> bool {
-        !self.disabled
+        self.disabled == 0
     }
 
     /// The list of storages this metric should be recorded into.

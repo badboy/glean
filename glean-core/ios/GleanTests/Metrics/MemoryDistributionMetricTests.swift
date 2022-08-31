@@ -20,7 +20,7 @@ class MemoryDistributionTypeTests: XCTestCase {
             name: "memory_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
             ), .kilobyte
         )
 
@@ -53,7 +53,7 @@ class MemoryDistributionTypeTests: XCTestCase {
             name: "memory_distribution",
             sendInPings: ["store1"],
             lifetime: .ping,
-            disabled: false
+            disabled: 0
             ), .gigabyte
         )
 
@@ -89,7 +89,7 @@ class MemoryDistributionTypeTests: XCTestCase {
             name: "memory_distribution",
             sendInPings: ["store1"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
             ), .kilobyte
         )
 
@@ -103,7 +103,7 @@ class MemoryDistributionTypeTests: XCTestCase {
             name: "memory_distribution",
             sendInPings: ["store1", "store2", "store3"],
             lifetime: .application,
-            disabled: false
+            disabled: 0
             ), .kilobyte
         )
 
