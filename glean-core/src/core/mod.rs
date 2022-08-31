@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
+use std::sync::atomic::AtomicU8;
 
 use chrono::{DateTime, FixedOffset};
 use once_cell::sync::OnceCell;
@@ -148,6 +149,7 @@ pub struct Glean {
     debug: DebugOptions,
     pub(crate) app_build: String,
     pub(crate) schedule_metrics_pings: bool,
+    pub(crate) nimbus_epoch: AtomicU8,
 }
 
 impl Glean {
@@ -200,6 +202,7 @@ impl Glean {
             app_build: cfg.app_build.to_string(),
             // Subprocess doesn't use "metrics" pings so has no need for a scheduler.
             schedule_metrics_pings: false,
+            nimbus_epoch: AtomicU8::new(0),
         };
 
         // Ensuring these pings are registered.

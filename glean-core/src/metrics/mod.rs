@@ -5,6 +5,7 @@
 //! The different metric types supported by the Glean SDK to handle data.
 
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -160,7 +161,22 @@ pub trait MetricType {
     /// This depends on the metrics own state, as determined by its metadata,
     /// and whether upload is enabled on the Glean object.
     fn should_record(&self, glean: &Glean) -> bool {
-        glean.is_upload_enabled() && self.meta().should_record()
+        if !glean.is_upload_enabled() {
+            return false
+        }
+        let meta = self.meta();
+        let epoch = meta.disabled >> 4;
+        let disabled = meta.disabled & 0xF;
+        let nimbus_epoch = glean.nimbus_epoch.load(Ordering::Acquire);
+        if epoch == nimbus_epoch {
+            return disabled == 0;
+        }
+        // otherwise:
+        // look up disabled for meta.base_identifier()
+        let current_disabled = 1;
+        let new_disabled = (nimbus_epoch << 4) | current_disabled;
+        //self.meta.set_disabled(new_disabled)
+        current_disabled == 0
     }
 }
 

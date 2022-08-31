@@ -119,11 +119,6 @@ impl CommonMetricData {
         }
     }
 
-    /// Whether this metric should be recorded.
-    pub fn should_record(&self) -> bool {
-        self.disabled == 0
-    }
-
     /// The list of storages this metric should be recorded into.
     pub fn storage_names(&self) -> &[String] {
         &self.send_in_pings

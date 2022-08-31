@@ -198,7 +198,7 @@ impl TimespanMetric {
     /// Explicitly sets the timespan value synchronously.
     #[doc(hidden)]
     pub fn set_raw_sync(&self, glean: &Glean, elapsed: Duration) {
-        if !self.meta.should_record() {
+        if !self.should_record(glean) {
             return;
         }
 
