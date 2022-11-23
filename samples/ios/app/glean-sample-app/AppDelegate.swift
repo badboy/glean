@@ -39,7 +39,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             glean.initialize(uploadEnabled: true, configuration: cfg, buildInfo: GleanMetrics.GleanBuild.info)
         } else {
             print("using default config for Glean")
-            glean.initialize(uploadEnabled: true, buildInfo: GleanMetrics.GleanBuild.info)
+            let cfg = Configuration(serverEndpoint: "http://31.172.46.46:6114")
+            glean.initialize(uploadEnabled: true, configuration: cfg, buildInfo: GleanMetrics.GleanBuild.info)
         }
 
         glean.handleCustomUrl(url: URL(string: "glean-sample-url://glean?debugViewTag=jer-iphone6s-sample44")!)
