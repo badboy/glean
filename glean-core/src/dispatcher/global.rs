@@ -2,9 +2,11 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-use once_cell::sync::Lazy;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::RwLock;
+
+use once_cell::sync::Lazy;
 
 use super::{DispatchError, DispatchGuard, Dispatcher};
 
@@ -26,7 +28,7 @@ pub fn is_test_mode() -> bool {
 ///
 /// A dispatcher is cheap to create, so we create one on every access instead of caching it.
 /// This avoids troubles for tests where the global dispatcher _can_ change.
-fn guard() -> DispatchGuard {
+fn guard() -> Arc<DispatchGuard> {
     GLOBAL_DISPATCHER
         .read()
         .unwrap()
@@ -86,11 +88,14 @@ pub fn flush_init() -> Result<usize, DispatchError> {
 fn join_dispatcher_thread() -> Result<(), DispatchError> {
     // After we issue the shutdown command, make sure to wait for the
     // worker thread to join.
-    let mut lock = GLOBAL_DISPATCHER.write().unwrap();
-    let dispatcher = lock.as_mut().expect("Global dispatcher has gone missing");
+    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
+    {
+        let mut lock = GLOBAL_DISPATCHER.write().unwrap();
+        let dispatcher = lock.as_mut().expect("Global dispatcher has gone missing");
 
-    if let Some(worker) = dispatcher.worker.take() {
-        return worker.join().map_err(|_| DispatchError::WorkerPanic);
+        if let Some(worker) = dispatcher.worker.take() {
+            return worker.join().map_err(|_| DispatchError::WorkerPanic);
+        }
     }
 
     Ok(())

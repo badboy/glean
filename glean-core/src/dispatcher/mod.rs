@@ -41,6 +41,13 @@ use thiserror::Error;
 pub use global::*;
 
 pub(crate) mod global;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+mod ios;
+
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+use imp::*;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+use ios::*;
 
 /// Command received while blocked from further work.
 enum Blocked {
@@ -92,9 +99,12 @@ impl<T> From<SendError<T>> for DispatchError {
     }
 }
 
+mod imp {
+    use super::*;
+
 /// A clonable guard for a dispatch queue.
 #[derive(Clone)]
-struct DispatchGuard {
+pub struct DispatchGuard {
     /// Whether to queue on the preinit buffer or on the unbounded queue
     queue_preinit: Arc<AtomicBool>,
 
@@ -345,6 +355,8 @@ impl Dispatcher {
     }
 }
 
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -389,6 +401,7 @@ mod test {
         assert_eq!(main_thread_id, thread::current().id());
     }
 
+    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
     #[test]
     fn launch_correctly_adds_tasks_to_preinit_queue() {
         enable_test_logging();
@@ -487,6 +500,8 @@ mod test {
         assert!(result.lock().unwrap().is_empty());
     }
 
+
+    #[cfg(not(any(target_os = "ios", target_os = "macos")))]
     #[test]
     fn preinit_buffer_fills_up() {
         enable_test_logging();
