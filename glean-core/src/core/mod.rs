@@ -156,13 +156,15 @@ impl Glean {
     /// Importantly, this will not send any pings at startup, since that
     /// sort of management should only happen in the main process.
     pub fn new_for_subprocess(cfg: &InternalConfiguration, scan_directories: bool) -> Result<Self> {
-        log::info!("Creating new Glean v{}", GLEAN_VERSION);
+        log::info!("jer. Creating new Glean v{}", GLEAN_VERSION);
 
         let application_id = sanitize_application_id(&cfg.application_id);
+        log::info!("jer. app id: {application_id}");
         if application_id.is_empty() {
             return Err(ErrorKind::InvalidConfig.into());
         }
 
+        log::info!("jer. data path: {}", cfg.data_path);
         let data_path = Path::new(&cfg.data_path);
         let event_data_store = EventDatabase::new(data_path)?;
 
@@ -224,6 +226,8 @@ impl Glean {
         // If that fails we bail out and don't initialize further.
         let data_path = Path::new(&cfg.data_path);
         glean.data_store = Some(Database::new(data_path, cfg.delay_ping_lifetime_io)?);
+
+        log::info!("jer. new glean. cfg.upload_enabled: {}", cfg.upload_enabled);
 
         // The upload enabled flag may have changed since the last run, for
         // example by the changing of a config file.
@@ -308,11 +312,19 @@ impl Glean {
             .client_id
             .get_value(self, Some("glean_client_info"))
         {
-            None => true,
-            Some(uuid) => uuid == *KNOWN_CLIENT_ID,
+            None => {
+                log::info!("jer. client id is missing. need a new one.");
+                true
+            },
+            Some(uuid) => {
+                log::info!("jer. current client id: {}", uuid);
+                uuid == *KNOWN_CLIENT_ID
+            }
         };
+        log::info!("jer. initialize_core_metrics. need_new_client_id: {:?}", need_new_client_id);
         if need_new_client_id {
-            self.core_metrics.client_id.generate_and_set_sync(self);
+            let uuid = self.core_metrics.client_id.generate_and_set_sync(self);
+            log::info!("jer. generated new client id: {}", uuid);
         }
 
         if self

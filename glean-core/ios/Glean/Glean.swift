@@ -179,6 +179,14 @@ public class Glean {
         gleanSetUploadEnabled(enabled)
     }
 
+    public func getClientId() -> String { gleanGetClientId() }
+    public func getDbSize() -> String { gleanGetDbSize() }
+    public func getDbKeys() -> String { gleanGetDbKeys() }
+    public func getDatabaseFiles() -> String { gleanDatabaseFiles(getGleanDirectory().relativePath) }
+    public func forceWrite() {
+        gleanForceWrite()
+    }
+
     /// Used to indicate that an experiment is running.
     ///
     /// Glean will add an experiment annotation that is sent with pings.  This information is _not_

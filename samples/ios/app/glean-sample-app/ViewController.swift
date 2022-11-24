@@ -15,6 +15,8 @@ class ViewController: UIViewController {
     @IBOutlet var sendButton: UIButton!
     @IBOutlet var enabledLabel: UILabel!
     @IBOutlet var enableSwitch: UISwitch!
+    @IBOutlet var getClientIdButton: UIButton!
+    @IBOutlet var dataTextView: UITextView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,6 +34,10 @@ class ViewController: UIViewController {
 
         // Set the correct text for the label
         enabledLabel.text = "Glean is \(enableSwitch.isOn ? "enabled" : "disabled")"
+
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        dataTextView.text = "Booted.\n"
+        dataTextView.text += "\(appDelegate.data ?? "empty")"
 
         Test.isStarted.set(true)
 
@@ -76,5 +82,15 @@ class ViewController: UIViewController {
         Glean.shared.setUploadEnabled(enableSwitch.isOn)
         UserDefaults.standard.set(enableSwitch.isOn, forKey: telemetryPrefKey)
         enabledLabel.text = "Glean is \(enableSwitch.isOn ? "enabled" : "disabled")"
+    }
+
+    @IBAction func getClientIdButtonTapped(_ sender: Any) {
+        let clientId = Glean.shared.getClientId()
+        dataTextView.text = ""
+        dataTextView.text += "ID: \(clientId)\n"
+        dataTextView.text += "data.safe.bin size=\(getDbSize("data.safe.bin"))\n"
+        dataTextView.text += "data.safe.tmp size=\(getDbSize("data.safe.tmp"))\n"
+        dataTextView.text += "files:\n\(Glean.shared.getDatabaseFiles())"
+        dataTextView.text += "keys:\n\(Glean.shared.getDbKeys())"
     }
 }

@@ -10,13 +10,47 @@ typealias Custom = GleanMetrics.Custom
 typealias Test = GleanMetrics.Test
 typealias Pings = GleanMetrics.Pings
 
+func getGleanDbDirectory() -> URL {
+    let paths = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+    let documentsDirectory = paths[0]
+    return documentsDirectory.appendingPathComponent("glean_data")
+}
+
+func getDbSize(_ name: String) -> String {
+    let dir = getGleanDbDirectory()
+    let filePath = dir.appendingPathComponent("db").appendingPathComponent(name)
+    var fileSize : String
+
+    do {
+        //return [FileAttributeKey : Any]
+        let attr = try FileManager.default.attributesOfItem(atPath: filePath.relativePath)
+        let fsz = attr[FileAttributeKey.size] as! UInt64
+        fileSize = "\(fsz)"
+
+        //if you convert to NSDictionary, you can get file size old way as well.
+        let dict = attr as NSDictionary
+        fileSize = "\(dict.fileSize())"
+    } catch {
+        fileSize = "(error reading file)"
+    }
+
+    return fileSize
+}
+
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     let glean = Glean.shared
 
+    var data: String?
+
     // swiftlint:disable line_length
     func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        var data = "data.safe.bin size=\(getDbSize("data.safe.bin"))\n"
+        data += "data.safe.tmp size=\(getDbSize("data.safe.tmp"))\n"
+        data += "\(glean.getDatabaseFiles())"
+        self.data = data
+
         glean.registerPings(Pings.shared)
 
         // Set a "fake" legacy client id for the purpose of testing the deletion-request ping payload
@@ -43,7 +77,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             glean.initialize(uploadEnabled: true, configuration: cfg, buildInfo: GleanMetrics.GleanBuild.info)
         }
 
-        glean.handleCustomUrl(url: URL(string: "glean-sample-url://glean?debugViewTag=jer-iphone6s-sample44")!)
+        glean.handleCustomUrl(url: URL(string: "glean-sample-url://glean?debugViewTag=jer-spikebug")!)
         Test.timespan.start()
 
         // Set a sample value for a metric.

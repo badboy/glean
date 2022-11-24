@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::path::PathBuf;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::fs;
@@ -152,6 +153,7 @@ use crate::Result;
 pub struct Database {
     /// Handle to the database environment.
     rkv: Rkv,
+    path: PathBuf,
 
     /// Handles to the "lifetime" stores.
     ///
@@ -213,6 +215,36 @@ fn database_size(dir: &Path) -> Option<NonZeroU64> {
 }
 
 impl Database {
+    pub fn get_db_size(&self) -> Option<NonZeroU64> {
+        database_size(&self.path)
+    }
+
+    pub fn get_all_keys(&self) -> String {
+        let mut keys = vec![];
+        let reader = self.rkv.read().unwrap();
+        for (name, store) in [("user", self.user_store), ("ping", self.ping_store), ("app", self.application_store)] {
+            log::info!("jer. Store: {}", name);
+            let mut iter = store.iter_start(&reader).unwrap();
+            while let Some(Ok((metric_id, _value))) = iter.next() {
+                let metric_id = match str::from_utf8(metric_id) {
+                    Ok(metric_id) => metric_id.to_string(),
+                    _ => "<unset>".to_string(),
+                };
+
+                let key = format!("{name}#{metric_id}");
+                keys.push(key);
+            }
+        }
+
+        serde_json::to_string_pretty(&keys).unwrap()
+    }
+
+    pub fn force_write(&self) -> Result<()> {
+        let writer = self.rkv.write()?;
+        writer.commit()?;
+        Ok(())
+    }
+
     /// Initializes the data store.
     ///
     /// This opens the underlying rkv store and creates
@@ -222,10 +254,15 @@ impl Database {
     /// persisted, in case `delay_ping_lifetime_io` is set.
     pub fn new(data_path: &Path, delay_ping_lifetime_io: bool) -> Result<Self> {
         let path = data_path.join("db");
-        log::debug!("Database path: {:?}", path.display());
+        log::info!("jer. Database path: {:?}", path.display());
         let file_size = database_size(&path);
+        log::info!("jer. file size: {:?}", file_size);
+        if file_size.is_none() {
+            log::info!("jer. NO PRIOR DATABASE! WHAT IS GOING ON?");
+        }
 
         let rkv = Self::open_rkv(&path)?;
+        log::info!("jer. rkv opened");
         let user_store = rkv.open_single(Lifetime::User.as_str(), StoreOptions::create())?;
         let ping_store = rkv.open_single(Lifetime::Ping.as_str(), StoreOptions::create())?;
         let application_store =
@@ -236,8 +273,26 @@ impl Database {
             None
         };
 
+        log::info!("jer. Iterate database");
+        let reader = rkv.read().unwrap();
+        for (name, store) in [("user", user_store), ("ping", ping_store), ("app", application_store)] {
+            log::info!("jer. Store: {}", name);
+            let mut iter = store.iter_start(&reader).unwrap();
+            while let Some(Ok((metric_id, _value))) = iter.next() {
+                let metric_id = match str::from_utf8(metric_id) {
+                    Ok(metric_id) => metric_id.to_string(),
+                    _ => "<unset>".to_string(),
+                };
+
+                log::info!("jer. Key: {}", metric_id);
+            }
+            log::info!("jer. Store DONE: {}", name);
+        }
+
+
         let db = Self {
             rkv,
+            path: path,
             user_store,
             ping_store,
             application_store,
@@ -443,6 +498,7 @@ impl Database {
     where
         F: FnMut(Writer, &SingleStore) -> Result<()>,
     {
+        log::info!("jer. write_with_store for store: {store_name:?}");
         let writer = self.rkv.write().unwrap();
         let store = self.get_store(store_name);
         transaction_fn(writer, store)
@@ -450,12 +506,14 @@ impl Database {
 
     /// Records a metric in the underlying storage system.
     pub fn record(&self, glean: &Glean, data: &CommonMetricData, value: &Metric) {
+        log::info!("jer. record. enabled? {:?}", glean.is_upload_enabled());
         // If upload is disabled we don't want to record.
         if !glean.is_upload_enabled() {
             return;
         }
 
         let name = data.identifier(glean);
+        log::info!("jer. record. name={name:?}");
 
         for ping_name in data.storage_names() {
             if let Err(e) = self.record_per_lifetime(data.lifetime, ping_name, &name, value) {
@@ -483,6 +541,7 @@ impl Database {
         metric: &Metric,
     ) -> Result<()> {
         let final_key = Self::get_storage_key(storage_name, Some(key));
+        log::info!("record_per_lifetime. lifetime={lifetime:?}, final key: {final_key:?}");
 
         // Lifetime::Ping data is not immediately persisted to disk if
         // Glean has `delay_ping_lifetime_io` set to true

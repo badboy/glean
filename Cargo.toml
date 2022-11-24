@@ -20,3 +20,6 @@ default-members = [
 opt-level = "s"
 debug = false
 lto = true
+
+[patch.crates-io]
+rkv = { path = "/Users/jer/mozilla/src/rkv/" }

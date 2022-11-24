@@ -37,5 +37,9 @@ class GleanLifecycleObserver {
 
     @objc func appDidEnterBackground(notification _: NSNotification) {
         Glean.shared.handleBackgroundEvent()
+
+        Dispatchers.shared.launchAsync {
+            Glean.shared.forceWrite()
+        }
     }
 }

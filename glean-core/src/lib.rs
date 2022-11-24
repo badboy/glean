@@ -577,10 +577,10 @@ pub extern "C" fn glean_enable_logging() {
     {
         // Debug logging in debug mode.
         // (Note: `debug_assertions` is the next best thing to determine if this is a debug build)
-        #[cfg(debug_assertions)]
+        //#[cfg(debug_assertions)]
         let level = log::LevelFilter::Debug;
-        #[cfg(not(debug_assertions))]
-        let level = log::LevelFilter::Info;
+        //#[cfg(not(debug_assertions))]
+        //let level = log::LevelFilter::Info;
 
         let logger = oslog::OsLogger::new("org.mozilla.glean")
             .level_filter(level)
@@ -928,6 +928,80 @@ pub fn glean_enable_logging_to_fd(fd: u64) {
             log::set_max_level(log::LevelFilter::Debug);
         }
     }
+}
+
+/// TODO
+pub fn glean_get_client_id() -> String {
+    core::with_glean(|glean| {
+        glean
+            .core_metrics
+            .client_id
+            .get_value(glean, Some("glean_client_info"))
+            .map(|uuid| uuid.to_hyphenated().to_string())
+            .unwrap_or_else(|| "unset".to_string())
+    })
+}
+
+/// TODO
+pub fn glean_get_db_size() -> String {
+    core::with_glean(|glean| {
+        glean.storage().get_db_size().map(|s| s.to_string()).unwrap_or_else(|| "None".to_string())
+    })
+}
+
+/// TODO
+pub fn glean_get_db_keys() -> String {
+    core::with_glean(|glean| {
+        glean.storage().get_all_keys()
+    })
+}
+
+/// TODO
+pub fn glean_database_files(dir: String) -> String {
+    log::info!("jer. glean_database_files. dir: {dir:?}");
+    let mut files = vec![];
+    files.push(format!("datadir:{dir}"));
+    let dir2 = format!("{dir}/db");
+    if let Ok(entries) = std::fs::read_dir(&dir2) {
+        for entry in entries.flatten() {
+            if let Ok(file_type) = entry.file_type() {
+                if file_type.is_file() {
+                    let name = entry.path().display().to_string();
+                    let size = if let Ok(metadata) = std::fs::metadata(entry.path()) {
+                        metadata.len()
+                    } else {
+                        0
+                    };
+                    let name = format!("{name}(size={size})");
+                    files.push(name.strip_prefix(&dir).unwrap().to_string());
+                } else {
+                    let name = format!("{}/", entry.path().display().to_string());
+                    files.push(name.strip_prefix(&dir).unwrap().to_string());
+                }
+            } else {
+                let name = format!("missing-type:{}", entry.path().display().to_string());
+                files.push(name.strip_prefix(&dir).unwrap().to_string());
+            }
+        }
+    }
+
+    serde_json::to_string_pretty(&files).unwrap()
+}
+
+/// todo
+pub fn glean_force_write() {
+    let (tx, rx) = crossbeam_channel::bounded(0);
+    crate::launch_with_glean(move |glean| {
+        if let Some(db) = glean.storage_opt() {
+            if let Err(e) = db.force_write() {
+                log::error!("Database force write failed: {e:?}");
+            }
+
+        }
+        tx.send(()).unwrap();
+    });
+
+    rx.recv().unwrap();
 }
 
 /// Unused function. Not used on Android or iOS.

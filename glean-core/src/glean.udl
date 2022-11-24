@@ -46,6 +46,12 @@ namespace glean {
 
     PingUploadTask glean_get_upload_task();
     UploadTaskAction glean_process_ping_upload_response(string uuid, UploadResult result);
+
+    string glean_get_client_id();
+    string glean_get_db_size();
+    string glean_get_db_keys();
+    string glean_database_files(string dir);
+    void glean_force_write();
 };
 
 // The Glean configuration.
