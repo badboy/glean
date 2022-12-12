@@ -143,7 +143,7 @@ pub struct Glean {
     pub(crate) internal_pings: InternalPings,
     data_path: PathBuf,
     application_id: String,
-    ping_registry: HashMap<String, PingType>,
+    pub(crate) ping_registry: HashMap<String, PingType>,
     start_time: DateTime<FixedOffset>,
     max_events: u32,
     is_first_run: bool,
