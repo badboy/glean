@@ -3,10 +3,14 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
-    android.url = "github:tadfisher/android-nixpkgs";
-    android.inputs.nixpkgs.follows = "nixpkgs";
-    fenix.url = "github:nix-community/fenix";
-    fenix.inputs.nixpkgs.follows = "nixpkgs";
+    android = {
+      url = "github:tadfisher/android-nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, android, fenix }:
@@ -52,6 +56,8 @@
                   android-sdk
                   jdk19_headless
                   clang
+                  python310
+                  python310Packages.pip
                   fenixToolchain
                 ] ++ lib.optionals stdenv.isDarwin [
                   libiconv
