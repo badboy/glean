@@ -54,6 +54,13 @@ pub mod traits;
 pub mod upload;
 mod util;
 
+/// Format a string and convert it into a `Box<str>`.
+#[macro_export]
+macro_rules! bformat {
+    ($fmt:expr) => { format!($fmt).into_boxed_str() };
+    ($fmt:expr, $($args:tt)*) => { format!($fmt, $($args)+).into_boxed_str() };
+}
+
 #[cfg(all(not(target_os = "android"), not(target_os = "ios")))]
 mod fd_logger;
 
@@ -1165,6 +1172,7 @@ mod ffi {
     uniffi::include_scaffolding!("glean");
 
     type CowString = Cow<'static, str>;
+    type BoxedStr = Box<str>;
 
     impl UniffiCustomTypeConverter for CowString {
         type Builtin = String;
@@ -1175,6 +1183,18 @@ mod ffi {
 
         fn from_custom(obj: Self) -> Self::Builtin {
             obj.into_owned()
+        }
+    }
+
+    impl UniffiCustomTypeConverter for BoxedStr {
+        type Builtin = String;
+
+        fn into_custom(val: Self::Builtin) -> uniffi::Result<Self> {
+            Ok(val.into_boxed_str())
+        }
+
+        fn from_custom(obj: Self) -> Self::Builtin {
+            obj.to_string()
         }
     }
 }

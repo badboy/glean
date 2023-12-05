@@ -92,7 +92,7 @@ fn validate_against_schema() {
     const PING_NAME: &str = "test-ping";
 
     let common = |name: &str| CommonMetricData {
-        identifier: format!("test.{name}"),
+        identifier: glean_core::bformat!("test.{name}"),
         send_in_pings: vec![PING_NAME.into()],
         ..Default::default()
     };

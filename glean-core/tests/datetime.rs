@@ -164,7 +164,7 @@ fn test_that_truncation_works() {
     for t in test_cases {
         let metric = DatetimeMetric::new(
             CommonMetricData {
-                identifier: format!("telemetry.datetime_metric_{}", t.case_name),
+                identifier: glean_core::bformat!("telemetry.datetime_metric_{}", t.case_name),
                 send_in_pings: vec![store_name.into()],
                 disabled: false,
                 lifetime: Lifetime::User,

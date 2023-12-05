@@ -28,7 +28,7 @@ impl MetricType for BooleanMetric {
     fn with_name(&self, name: String) -> Self {
         let mut meta = (*self.meta).clone();
         let (category, _) = meta.inner.identifier.rsplit_once('.').unwrap();
-        meta.inner.identifier = format!("{category}.{name}");
+        meta.inner.identifier = crate::bformat!("{category}.{name}");
         Self {
             meta: Arc::new(meta),
         }

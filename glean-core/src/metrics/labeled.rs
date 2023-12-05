@@ -188,7 +188,7 @@ where
                         self.new_metric_with_name(combine_base_identifier_and_label(
                             name,
                             label,
-                        ))
+                        ).to_string())
                     }
                     None => self.new_metric_with_dynamic_label(label.to_string()),
                 };
@@ -221,8 +221,8 @@ where
 }
 
 /// Combines a metric's base identifier and label
-pub fn combine_base_identifier_and_label(base_identifer: &str, label: &str) -> String {
-    format!("{}/{}", base_identifer, label)
+pub fn combine_base_identifier_and_label(base_identifer: &str, label: &str) -> Box<str> {
+    crate::bformat!("{}/{}", base_identifer, label)
 }
 
 /// Strips the label off of a complete identifier
@@ -252,7 +252,7 @@ pub fn validate_dynamic_label(
     let key = combine_base_identifier_and_label(base_identifier, label);
     for store in &meta.inner.send_in_pings {
         if glean.storage().has_metric(meta.inner.lifetime, store, &key) {
-            return key;
+            return key.to_string();
         }
     }
 
@@ -291,5 +291,5 @@ pub fn validate_dynamic_label(
         combine_base_identifier_and_label(base_identifier, OTHER_LABEL)
     } else {
         key
-    }
+    }.to_string()
 }

@@ -172,7 +172,7 @@ impl EventDatabase {
                 if !glean_restarted_stores.is_empty() {
                     for store_name in glean_restarted_stores.iter() {
                         CounterMetric::new(CommonMetricData {
-                            identifier: format!("{}.execution_counter", store_name),
+                            identifier: crate::bformat!("{}.execution_counter", store_name),
                             send_in_pings: vec![INTERNAL_STORAGE.into()],
                             lifetime: Lifetime::Ping,
                             ..Default::default()
@@ -285,7 +285,7 @@ impl EventDatabase {
             for store_name in meta.inner.send_in_pings.iter() {
                 let store = db.entry(store_name.to_string()).or_default();
                 let execution_counter = CounterMetric::new(CommonMetricData {
-                    identifier: format!("{}.execution_counter", store_name),
+                    identifier: crate::bformat!("{}.execution_counter", store_name),
                     send_in_pings: vec![INTERNAL_STORAGE.into()],
                     lifetime: Lifetime::Ping,
                     ..Default::default()
@@ -460,7 +460,7 @@ impl EventDatabase {
                 }
                 let ping_start = DatetimeMetric::new(
                     CommonMetricData {
-                        identifier: format!("{}#start", store_name),
+                        identifier: crate::bformat!("{}#start", store_name),
                         send_in_pings: vec![INTERNAL_STORAGE.into()],
                         lifetime: Lifetime::User,
                         ..Default::default()

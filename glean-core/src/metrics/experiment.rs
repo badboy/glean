@@ -70,7 +70,7 @@ impl ExperimentMetric {
         let new_experiment = Self {
             meta: CommonMetricDataInternal {
                 inner: CommonMetricData {
-                    identifier: format!("{}#experiment", truncated_id),
+                    identifier: crate::bformat!("{}#experiment", truncated_id),
                     // We don't need a category, the name is already unique
                     send_in_pings: vec![INTERNAL_STORAGE.into()],
                     lifetime: Lifetime::Application,

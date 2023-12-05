@@ -254,7 +254,7 @@ fn client_id_and_first_run_date_must_be_regenerated() {
 fn basic_metrics_should_be_cleared_when_uploading_is_disabled() {
     let (mut glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        identifier: "category.string_metric".to_string(),
+        identifier: bformat!("category.string_metric"),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });
@@ -727,7 +727,7 @@ fn timing_distribution_truncation() {
     ] {
         let dist = TimingDistributionMetric::new(
             CommonMetricData {
-                identifier: format!("local.local_metric_{:?}", unit),
+                identifier: crate::bformat!("local.local_metric_{:?}", unit),
                 send_in_pings: vec!["baseline".into()],
                 ..Default::default()
             },
@@ -786,7 +786,7 @@ fn timing_distribution_truncation_accumulate() {
     ] {
         let dist = TimingDistributionMetric::new(
             CommonMetricData {
-                identifier: format!("local.local_metric_{:?}", unit),
+                identifier: crate::bformat!("local.local_metric_{:?}", unit),
                 send_in_pings: vec!["baseline".into()],
                 ..Default::default()
             },
@@ -850,13 +850,13 @@ fn test_setting_log_pings() {
 fn test_set_remote_metric_configuration() {
     let (glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        identifier: "category.string_metric".to_string(),
+        identifier: bformat!("category.string_metric"),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });
     let another_metric = LabeledString::new(
         CommonMetricData {
-            identifier: "category.labeled_string_metric".to_string(),
+            identifier: bformat!("category.labeled_string_metric"),
             send_in_pings: vec!["baseline".to_string()],
             ..Default::default()
         },
@@ -1002,7 +1002,7 @@ fn test_remote_settings_epoch() {
 fn test_remote_settings_epoch_updates_in_metric() {
     let (glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        identifier: "category.string_metric".to_string(),
+        identifier: bformat!("category.string_metric"),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });

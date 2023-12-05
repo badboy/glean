@@ -54,7 +54,7 @@ impl TryFrom<i32> for Lifetime {
 #[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct CommonMetricData {
     /// The metric's category and name.
-    pub identifier: String,
+    pub identifier: Box<str>,
     /// List of ping names to include this metric in.
     pub send_in_pings: Vec<String>,
     /// The metric's lifetime.
@@ -98,20 +98,20 @@ impl From<CommonMetricData> for CommonMetricDataInternal {
 
 impl CommonMetricDataInternal {
     /// Creates a new metadata object.
-    pub fn new<A: Into<String>, B: Into<String>, C: Into<String>>(
+    pub fn new<A: AsRef<str>, B: AsRef<str>, C: Into<String>>(
         category: A,
         name: B,
         ping_name: C,
     ) -> CommonMetricDataInternal {
-        let category = category.into();
+        let category = category.as_ref();
         let identifier = if category.is_empty() {
-            name.into()
+            name.as_ref().to_owned()
         } else {
-            format!("{}.{}", category, name.into())
+            format!("{}.{}", category, name.as_ref())
         };
         CommonMetricDataInternal {
             inner: CommonMetricData {
-                identifier,
+                identifier: identifier.into_boxed_str(),
                 send_in_pings: vec![ping_name.into()],
                 ..Default::default()
             },
