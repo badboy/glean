@@ -17,8 +17,7 @@ fn can_create_labeled_counter_metric() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -49,8 +48,7 @@ fn can_create_labeled_string_metric() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledString::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -81,8 +79,7 @@ fn can_create_labeled_bool_metric() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledBoolean::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -113,8 +110,7 @@ fn can_use_multiple_labels() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -151,8 +147,7 @@ fn can_record_error_for_submetric() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledString::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -176,8 +171,7 @@ fn labels_are_checked_against_static_list() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -221,8 +215,7 @@ fn dynamic_labels_too_long() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -256,8 +249,7 @@ fn dynamic_labels_regex_mismatch() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -295,8 +287,7 @@ fn dynamic_labels_regex_allowed() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -350,8 +341,7 @@ fn seen_labels_get_reloaded_from_disk() {
 
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "labeled_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.labeled_metric".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -417,8 +407,7 @@ fn caching_metrics_with_dynamic_labels() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "cached_labels".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.cached_labels".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -451,8 +440,7 @@ fn caching_metrics_with_dynamic_labels_across_pings() {
     let (glean, _t) = new_glean(None);
     let labeled = LabeledCounter::new(
         CommonMetricData {
-            name: "cached_labels2".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.cached_labels2".into(),
             send_in_pings: vec!["store1".into()],
             disabled: false,
             lifetime: Lifetime::Ping,

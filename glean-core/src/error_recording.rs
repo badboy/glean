@@ -102,9 +102,9 @@ fn get_error_metric_for_metric(meta: &CommonMetricDataInternal, error: ErrorType
         send_in_pings.push(ping_name);
     }
 
+    let error = format!("glean.error.{}", error.as_str());
     CounterMetric::new(CommonMetricData {
-        name: combine_base_identifier_and_label(error.as_str(), name),
-        category: "glean.error".into(),
+        identifier: combine_base_identifier_and_label(error.as_str(), name),
         lifetime: Lifetime::Ping,
         send_in_pings,
         ..Default::default()
@@ -193,8 +193,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let string_metric = StringMetric::new(CommonMetricData {
-            name: "string_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.string_metric".into(),
             send_in_pings: vec!["store1".into(), "store2".into()],
             disabled: false,
             lifetime: Lifetime::User,

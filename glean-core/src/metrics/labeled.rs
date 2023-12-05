@@ -184,8 +184,9 @@ where
                 let metric = match self.labels {
                     Some(_) => {
                         let label = self.static_label(label);
+                        let (_category, name) = self.submetric.meta().inner.identifier.rsplit_once('.').unwrap();
                         self.new_metric_with_name(combine_base_identifier_and_label(
-                            &self.submetric.meta().inner.name,
+                            name,
                             label,
                         ))
                     }

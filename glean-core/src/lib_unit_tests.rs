@@ -254,8 +254,7 @@ fn client_id_and_first_run_date_must_be_regenerated() {
 fn basic_metrics_should_be_cleared_when_uploading_is_disabled() {
     let (mut glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        category: "category".to_string(),
-        name: "string_metric".to_string(),
+        identifier: "category.string_metric".to_string(),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });
@@ -653,14 +652,12 @@ fn test_change_metric_type_runtime() {
     // We attempt to create two metrics: one with a 'string' type and the other
     // with a 'timespan' type, both being sent in the same pings and having the
     // same lifetime.
-    let metric_name = "type_swap";
-    let metric_category = "test";
+    let metric_identifier = "test.type_swap";
     let metric_lifetime = Lifetime::Ping;
     let ping_name = "store1";
 
     let string_metric = StringMetric::new(CommonMetricData {
-        name: metric_name.into(),
-        category: metric_category.into(),
+        identifier: metric_identifier.into(),
         send_in_pings: vec![ping_name.into()],
         disabled: false,
         lifetime: metric_lifetime,
@@ -678,8 +675,7 @@ fn test_change_metric_type_runtime() {
 
     let timespan_metric = TimespanMetric::new(
         CommonMetricData {
-            name: metric_name.into(),
-            category: metric_category.into(),
+            identifier: metric_identifier.into(),
             send_in_pings: vec![ping_name.into()],
             disabled: false,
             lifetime: metric_lifetime,
@@ -731,8 +727,7 @@ fn timing_distribution_truncation() {
     ] {
         let dist = TimingDistributionMetric::new(
             CommonMetricData {
-                name: format!("local_metric_{:?}", unit),
-                category: "local".into(),
+                identifier: format!("local.local_metric_{:?}", unit),
                 send_in_pings: vec!["baseline".into()],
                 ..Default::default()
             },
@@ -791,8 +786,7 @@ fn timing_distribution_truncation_accumulate() {
     ] {
         let dist = TimingDistributionMetric::new(
             CommonMetricData {
-                name: format!("local_metric_{:?}", unit),
-                category: "local".into(),
+                identifier: format!("local.local_metric_{:?}", unit),
                 send_in_pings: vec!["baseline".into()],
                 ..Default::default()
             },
@@ -856,15 +850,13 @@ fn test_setting_log_pings() {
 fn test_set_remote_metric_configuration() {
     let (glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        category: "category".to_string(),
-        name: "string_metric".to_string(),
+        identifier: "category.string_metric".to_string(),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });
     let another_metric = LabeledString::new(
         CommonMetricData {
-            category: "category".to_string(),
-            name: "labeled_string_metric".to_string(),
+            identifier: "category.labeled_string_metric".to_string(),
             send_in_pings: vec!["baseline".to_string()],
             ..Default::default()
         },
@@ -1010,8 +1002,7 @@ fn test_remote_settings_epoch() {
 fn test_remote_settings_epoch_updates_in_metric() {
     let (glean, _t) = new_glean(None);
     let metric = StringMetric::new(CommonMetricData {
-        category: "category".to_string(),
-        name: "string_metric".to_string(),
+        identifier: "category.string_metric".to_string(),
         send_in_pings: vec!["baseline".to_string()],
         ..Default::default()
     });

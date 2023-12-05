@@ -94,8 +94,7 @@ mod test {
         let _t = new_glean(None, true);
 
         let metric: EventMetric<traits::NoExtraKeys> = EventMetric::new(CommonMetricData {
-            name: "event".into(),
-            category: "test".into(),
+            identifier: "test.event".into(),
             send_in_pings: vec!["test1".into()],
             ..Default::default()
         });
@@ -131,8 +130,7 @@ mod test {
         }
 
         let metric: EventMetric<SomeExtra> = EventMetric::new(CommonMetricData {
-            name: "event".into(),
-            category: "test".into(),
+            identifier: "test.event".into(),
             send_in_pings: vec!["test1".into()],
             ..Default::default()
         });
@@ -186,8 +184,7 @@ mod test {
 
         let metric: EventMetric<RuntimeExtra> = EventMetric::with_runtime_extra_keys(
             CommonMetricData {
-                name: "event".into(),
-                category: "test".into(),
+                identifier: "test.event".into(),
                 send_in_pings: vec!["test1".into()],
                 ..Default::default()
             },

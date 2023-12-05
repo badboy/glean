@@ -276,10 +276,8 @@ interface PingType {
 
 // The common set of data shared across all different metric types.
 dictionary CommonMetricData {
-    // The metric's category.
-    string category;
-    // The metric's name.
-    string name;
+    // The metric's category and name.
+    string identifier;
 
     // List of ping names to include this metric in.
     sequence<string> send_in_pings;

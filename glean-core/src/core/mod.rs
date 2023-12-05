@@ -126,8 +126,7 @@ where
 /// glean.register_ping_type(&ping);
 ///
 /// let call_counter: CounterMetric = CounterMetric::new(CommonMetricData {
-///     name: "calls".into(),
-///     category: "local".into(),
+///     identifier: "local.calls".into(),
 ///     send_in_pings: vec!["sample".into()],
 ///     ..Default::default()
 /// });
@@ -866,9 +865,8 @@ impl Glean {
 
     fn get_dirty_bit_metric(&self) -> metrics::BooleanMetric {
         metrics::BooleanMetric::new(CommonMetricData {
-            name: "dirtybit".into(),
+            identifier: "dirtybit".into(),
             // We don't need a category, the name is already unique
-            category: "".into(),
             send_in_pings: vec![INTERNAL_STORAGE.into()],
             lifetime: Lifetime::User,
             ..Default::default()

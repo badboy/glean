@@ -70,8 +70,7 @@ fn disabling_upload_disables_metrics_recording() {
     let _t = new_glean(None, true);
 
     let metric = BooleanMetric::new(CommonMetricData {
-        name: "bool_metric".into(),
-        category: "test".into(),
+        identifier: "test.bool_metric".into(),
         send_in_pings: vec!["store1".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -173,8 +172,7 @@ fn sending_of_foreground_background_pings() {
     let _lock = lock_test();
 
     let click: EventMetric<traits::NoExtraKeys> = private::EventMetric::new(CommonMetricData {
-        name: "click".into(),
-        category: "ui".into(),
+        identifier: "ui.click".into(),
         send_in_pings: vec!["events".into()],
         lifetime: Lifetime::Ping,
         disabled: false,
@@ -374,8 +372,7 @@ fn queued_recorded_metrics_correctly_record_during_init() {
     destroy_glean(true, &tmpname);
 
     let metric = CounterMetric::new(CommonMetricData {
-        name: "counter_metric".into(),
-        category: "test".into(),
+        identifier: "test.counter_metric".into(),
         send_in_pings: vec!["store1".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -453,8 +450,7 @@ fn dont_handle_events_when_uninitialized() {
     // Ensure there's at least one event recorded,
     // otherwise the ping is not sent.
     let click: EventMetric<traits::NoExtraKeys> = private::EventMetric::new(CommonMetricData {
-        name: "click".into(),
-        category: "ui".into(),
+        identifier: "ui.click".into(),
         send_in_pings: vec!["events".into()],
         lifetime: Lifetime::Ping,
         disabled: false,
@@ -485,8 +481,7 @@ fn the_app_channel_must_be_correctly_set_if_requested() {
 
     // Internal metric, replicated here for testing.
     let app_channel = StringMetric::new(CommonMetricData {
-        name: "app_channel".into(),
-        category: "".into(),
+        identifier: "app_channel".into(),
         send_in_pings: vec!["glean_client_info".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -579,8 +574,7 @@ fn ping_collection_must_happen_after_concurrently_scheduled_metrics_recordings()
     let ping_name = "custom_ping_1";
     let ping = private::PingType::new(ping_name, true, false, true, vec![]);
     let metric = private::StringMetric::new(CommonMetricData {
-        name: "string_metric".into(),
-        category: "telemetry".into(),
+        identifier: "telemetry.string_metric".into(),
         send_in_pings: vec![ping_name.into()],
         lifetime: Lifetime::Ping,
         disabled: false,
@@ -608,8 +602,7 @@ fn basic_metrics_should_be_cleared_when_disabling_uploading() {
     let _t = new_glean(None, false);
 
     let metric = private::StringMetric::new(CommonMetricData {
-        name: "string_metric".into(),
-        category: "telemetry".into(),
+        identifier: "telemetry.string_metric".into(),
         send_in_pings: vec!["default".into()],
         lifetime: Lifetime::Ping,
         disabled: false,
@@ -651,8 +644,7 @@ fn core_metrics_should_be_cleared_and_restored_when_disabling_and_enabling_uploa
 
     // Internal metric, replicated here for testing.
     let os_version = StringMetric::new(CommonMetricData {
-        name: "os_version".into(),
-        category: "".into(),
+        identifier: "os_version".into(),
         send_in_pings: vec!["glean_client_info".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -883,8 +875,7 @@ fn test_sending_of_startup_baseline_ping_with_application_lifetime_metric() {
     glean_core::glean_set_dirty_flag(true);
 
     let metric = private::StringMetric::new(CommonMetricData {
-        name: "app_lifetime".into(),
-        category: "telemetry".into(),
+        identifier: "telemetry.app_lifetime".into(),
         send_in_pings: vec!["baseline".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -1120,8 +1111,7 @@ fn flipping_upload_enabled_respects_order_of_events() {
     // We create a ping and a metric before we initialize Glean
     let sample_ping = PingType::new("sample-ping-1", true, false, true, vec![]);
     let metric = private::StringMetric::new(CommonMetricData {
-        name: "string_metric".into(),
-        category: "telemetry".into(),
+        identifier: "telemetry.string_metric".into(),
         send_in_pings: vec!["sample-ping-1".into()],
         lifetime: Lifetime::Ping,
         disabled: false,
@@ -1227,8 +1217,7 @@ fn test_a_ping_before_submission() {
     let sample_ping = PingType::new("custom1", true, true, true, vec![]);
 
     let metric = CounterMetric::new(CommonMetricData {
-        name: "counter_metric".into(),
-        category: "test".into(),
+        identifier: "test.counter_metric".into(),
         send_in_pings: vec!["custom1".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -1257,8 +1246,7 @@ fn test_boolean_get_num_errors() {
     let _t = new_glean(None, false);
 
     let metric = BooleanMetric::new(CommonMetricData {
-        name: "counter_metric".into(),
-        category: "test".into(),
+        identifier: "test.counter_metric".into(),
         send_in_pings: vec!["custom1".into()],
         lifetime: Lifetime::Application,
         disabled: false,
@@ -1278,8 +1266,7 @@ fn test_text_can_hold_long_string() {
     let _t = new_glean(None, false);
 
     let metric = TextMetric::new(CommonMetricData {
-        name: "text_metric".into(),
-        category: "test".into(),
+        identifier: "test.text_metric".into(),
         send_in_pings: vec!["custom1".into()],
         lifetime: Lifetime::Application,
         disabled: false,

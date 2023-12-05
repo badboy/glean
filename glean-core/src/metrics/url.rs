@@ -171,8 +171,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let metric = UrlMetric::new(CommonMetricData {
-            name: "url_metric".into(),
-            category: "test".into(),
+            identifier: "test.url_metric".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
             disabled: false,
@@ -189,8 +188,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let metric = UrlMetric::new(CommonMetricData {
-            name: "url_metric".into(),
-            category: "test".into(),
+            identifier: "test.url_metric".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
             disabled: false,
@@ -227,8 +225,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let metric = UrlMetric::new(CommonMetricData {
-            name: "url_metric".into(),
-            category: "test".into(),
+            identifier: "test.url_metric".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
             disabled: false,
@@ -251,8 +248,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let metric = UrlMetric::new(CommonMetricData {
-            name: "url_metric".into(),
-            category: "test".into(),
+            identifier: "test.url_metric".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
             disabled: false,

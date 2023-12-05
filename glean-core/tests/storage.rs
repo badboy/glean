@@ -24,8 +24,7 @@ fn can_snapshot() {
     let (glean, _t) = new_glean(None);
 
     let local_metric = StringMetric::new(CommonMetricData {
-        name: "can_snapshot_local_metric".into(),
-        category: "local".into(),
+        identifier: "local.can_snapshot_local_metric".into(),
         send_in_pings: vec!["store".into()],
         ..Default::default()
     });
@@ -43,8 +42,7 @@ fn snapshot_correctly_clears_the_stores() {
     let store_names: Vec<String> = vec!["store1".into(), "store2".into()];
 
     let metric = CounterMetric::new(CommonMetricData {
-        name: "metric".into(),
-        category: "telemetry".into(),
+        identifier: "telemetry.metric".into(),
         send_in_pings: store_names,
         disabled: false,
         lifetime: Lifetime::Ping,
@@ -75,8 +73,7 @@ fn storage_is_thread_safe() {
     let glean = Arc::new(Mutex::new(glean));
 
     let threadsafe_metric = CounterMetric::new(CommonMetricData {
-        name: "threadsafe".into(),
-        category: "global".into(),
+        identifier: "global.threadsafe".into(),
         send_in_pings: vec!["core".into(), "metrics".into()],
         ..Default::default()
     });

@@ -37,8 +37,7 @@ impl CoreMetrics {
     pub fn new() -> CoreMetrics {
         CoreMetrics {
             client_id: UuidMetric::new(CommonMetricData {
-                name: "client_id".into(),
-                category: "".into(),
+                identifier: "client_id".into(),
                 send_in_pings: vec!["glean_client_info".into()],
                 lifetime: Lifetime::User,
                 disabled: false,
@@ -47,8 +46,7 @@ impl CoreMetrics {
 
             first_run_date: DatetimeMetric::new(
                 CommonMetricData {
-                    name: "first_run_date".into(),
-                    category: "".into(),
+                    identifier: "first_run_date".into(),
                     send_in_pings: vec!["glean_client_info".into()],
                     lifetime: Lifetime::User,
                     disabled: false,
@@ -58,8 +56,7 @@ impl CoreMetrics {
             ),
 
             os: StringMetric::new(CommonMetricData {
-                name: "os".into(),
-                category: "".into(),
+                identifier: "os".into(),
                 send_in_pings: vec!["glean_client_info".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
@@ -73,8 +70,7 @@ impl AdditionalMetrics {
     pub fn new() -> AdditionalMetrics {
         AdditionalMetrics {
             io_errors: CounterMetric::new(CommonMetricData {
-                name: "io".into(),
-                category: "glean.error".into(),
+                identifier: "glean.error.io".into(),
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
@@ -83,8 +79,7 @@ impl AdditionalMetrics {
 
             pings_submitted: LabeledMetric::<CounterMetric>::new(
                 CommonMetricData {
-                    name: "pings_submitted".into(),
-                    category: "glean.validation".into(),
+                    identifier: "glean.validation.pings_submitted".into(),
                     send_in_pings: vec!["metrics".into(), "baseline".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -95,8 +90,7 @@ impl AdditionalMetrics {
 
             shutdown_wait: TimingDistributionMetric::new(
                 CommonMetricData {
-                    name: "shutdown_wait".into(),
-                    category: "glean.validation".into(),
+                    identifier: "glean.validation.shutdown_wait".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -107,8 +101,7 @@ impl AdditionalMetrics {
 
             shutdown_dispatcher_wait: TimingDistributionMetric::new(
                 CommonMetricData {
-                    name: "shutdown_dispatcher_wait".into(),
-                    category: "glean.validation".into(),
+                    identifier: "glean.validation.shutdown_dispatcher_wait".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -126,8 +119,7 @@ impl AdditionalMetrics {
             // code from the internal Glean metrics.yaml (there aren't currently
             // any plans for this).
             experimentation_id: StringMetric::new(CommonMetricData {
-                name: "experimentation_id".into(),
-                category: "glean.client.annotation".into(),
+                identifier: "glean.client.annotation.experimentation_id".into(),
                 send_in_pings: vec!["all-pings".into()],
                 lifetime: Lifetime::Application,
                 disabled: false,
@@ -155,8 +147,7 @@ impl UploadMetrics {
         UploadMetrics {
             ping_upload_failure: LabeledMetric::<CounterMetric>::new(
                 CommonMetricData {
-                    name: "ping_upload_failure".into(),
-                    category: "glean.upload".into(),
+                    identifier: "glean.upload.ping_upload_failure".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -173,8 +164,7 @@ impl UploadMetrics {
 
             discarded_exceeding_pings_size: MemoryDistributionMetric::new(
                 CommonMetricData {
-                    name: "discarded_exceeding_ping_size".into(),
-                    category: "glean.upload".into(),
+                    identifier: "glean.upload.discarded_exceeding_ping_size".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -185,8 +175,7 @@ impl UploadMetrics {
 
             pending_pings_directory_size: MemoryDistributionMetric::new(
                 CommonMetricData {
-                    name: "pending_pings_directory_size".into(),
-                    category: "glean.upload".into(),
+                    identifier: "glean.upload.pending_pings_directory_size".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -196,8 +185,7 @@ impl UploadMetrics {
             ),
 
             deleted_pings_after_quota_hit: CounterMetric::new(CommonMetricData {
-                name: "deleted_pings_after_quota_hit".into(),
-                category: "glean.upload".into(),
+                identifier: "glean.upload.deleted_pings_after_quota_hit".into(),
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
@@ -205,8 +193,7 @@ impl UploadMetrics {
             }),
 
             pending_pings: CounterMetric::new(CommonMetricData {
-                name: "pending_pings".into(),
-                category: "glean.upload".into(),
+                identifier: "glean.upload.pending_pings".into(),
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
@@ -215,8 +202,7 @@ impl UploadMetrics {
 
             send_success: TimingDistributionMetric::new(
                 CommonMetricData {
-                    name: "send_success".into(),
-                    category: "glean.upload".into(),
+                    identifier: "glean.upload.send_success".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -227,8 +213,7 @@ impl UploadMetrics {
 
             send_failure: TimingDistributionMetric::new(
                 CommonMetricData {
-                    name: "send_failure".into(),
-                    category: "glean.upload".into(),
+                    identifier: "glean.upload.send_failure".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,
@@ -238,8 +223,7 @@ impl UploadMetrics {
             ),
 
             in_flight_pings_dropped: CounterMetric::new(CommonMetricData {
-                name: "in_flight_pings_dropped".into(),
-                category: "glean.upload".into(),
+                identifier: "glean.upload.in_flight_pings_dropped".into(),
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
@@ -247,8 +231,7 @@ impl UploadMetrics {
             }),
 
             missing_send_ids: CounterMetric::new(CommonMetricData {
-                name: "missing_send_ids".into(),
-                category: "glean.upload".into(),
+                identifier: "glean.upload.missing_send_ids".into(),
                 send_in_pings: vec!["metrics".into()],
                 lifetime: Lifetime::Ping,
                 disabled: false,
@@ -268,8 +251,7 @@ impl DatabaseMetrics {
         DatabaseMetrics {
             size: MemoryDistributionMetric::new(
                 CommonMetricData {
-                    name: "size".into(),
-                    category: "glean.database".into(),
+                    identifier: "glean.database.size".into(),
                     send_in_pings: vec!["metrics".into()],
                     lifetime: Lifetime::Ping,
                     disabled: false,

@@ -33,7 +33,8 @@ impl MetricType for TextMetric {
 
     fn with_name(&self, name: String) -> Self {
         let mut meta = (*self.meta).clone();
-        meta.inner.name = name;
+        let (category, _) = meta.inner.identifier.rsplit_once('.').unwrap();
+        meta.inner.identifier = format!("{category}.{name}");
         Self {
             meta: Arc::new(meta),
         }
@@ -157,8 +158,7 @@ mod test {
         let (glean, _t) = new_glean(None);
 
         let metric = TextMetric::new(CommonMetricData {
-            name: "text_metric".into(),
-            category: "test".into(),
+            identifier: "test.text_metric".into(),
             send_in_pings: vec!["store1".into()],
             lifetime: Lifetime::Application,
             disabled: false,

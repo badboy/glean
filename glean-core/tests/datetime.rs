@@ -28,8 +28,7 @@ fn datetime_serializer_should_correctly_serialize_datetime() {
 
         let metric = DatetimeMetric::new(
             CommonMetricData {
-                name: "datetime_metric".into(),
-                category: "telemetry".into(),
+                identifier: "telemetry.datetime_metric".into(),
                 send_in_pings: vec!["store1".into()],
                 disabled: false,
                 lifetime: Lifetime::User,
@@ -74,8 +73,7 @@ fn set_value_properly_sets_the_value_in_all_stores() {
 
     let metric = DatetimeMetric::new(
         CommonMetricData {
-            name: "datetime_metric".into(),
-            category: "telemetry".into(),
+            identifier: "telemetry.datetime_metric".into(),
             send_in_pings: store_names.clone(),
             disabled: false,
             lifetime: Lifetime::Ping,
@@ -166,8 +164,7 @@ fn test_that_truncation_works() {
     for t in test_cases {
         let metric = DatetimeMetric::new(
             CommonMetricData {
-                name: format!("datetime_metric_{}", t.case_name),
-                category: "telemetry".into(),
+                identifier: format!("telemetry.datetime_metric_{}", t.case_name),
                 send_in_pings: vec![store_name.into()],
                 disabled: false,
                 lifetime: Lifetime::User,
