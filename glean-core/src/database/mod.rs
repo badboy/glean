@@ -33,6 +33,7 @@ use crate::Lifetime;
 use crate::Result;
 
 const SCHEMA: &str = r#"
+BEGIN;
 CREATE TABLE IF NOT EXISTS telemetry
 (
   id TEXT NOT NULL,
@@ -41,7 +42,17 @@ CREATE TABLE IF NOT EXISTS telemetry
   value BLOB,
   updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
   UNIQUE(id, ping)
-)
+);
+CREATE TABLE IF NOT EXISTS pings
+(
+  id TEXT NOT NULL,
+  ping TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  state TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
+  UNIQUE(id, ping)
+);
+COMMIT;
 "#;
 
 pub struct Database {
@@ -87,7 +98,7 @@ impl Database {
         conn.pragma_update(None, "wal_autocheckpoint", 62)?;
         conn.pragma_update(None, "page_size", 32768)?;
         conn.pragma_update(None, "cache_size", -6144)?;
-        conn.execute(SCHEMA, [])?;
+        conn.execute_batch(SCHEMA)?;
         conn.set_prepared_statement_cache_capacity(128);
 
         let db = Self {
