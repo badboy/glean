@@ -3,7 +3,6 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 use std::fs;
-use std::io;
 use std::num::NonZeroU64;
 use std::panic::AssertUnwindSafe;
 use std::path::Path;
@@ -441,20 +440,6 @@ impl Database {
         let res = stmt.execute([lifetime.as_str()]);
 
         if let Err(e) = res {
-            // We try to clear everything.
-            // If there was no data to begin with we encounter a `NotFound` error.
-            // There's no point in logging that.
-            if let ErrorKind::Rkv(StoreError::IoError(ioerr)) = e.kind() {
-                if let io::ErrorKind::NotFound = ioerr.kind() {
-                    log::debug!(
-                        "Could not clear store for lifetime {:?}: {:?}",
-                        lifetime,
-                        ioerr
-                    );
-                    return;
-                }
-            }
-
             log::warn!("Could not clear store for lifetime {:?}: {:?}", lifetime, e);
         }
     }
