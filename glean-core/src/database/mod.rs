@@ -78,12 +78,17 @@ impl Database {
         let path = data_path.join("db");
         log::debug!("Database path: {:?}", path.display());
 
+        fn sqlite3_tracer(msg: &str) {
+            eprintln!("[SQLITE3 tracer] msg={msg}");
+        }
+
         fs::create_dir_all(&path)?;
         let sql_path = path.join("telemetry.db");
-        let conn = Connection::open_with_flags(
+        let mut conn = Connection::open_with_flags(
             sql_path,
             OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
         )?;
+        conn.trace(Some(sqlite3_tracer));
 
         // as per application-servers, components/places/src/db/db.rs
         #[cfg(target_os = "android")]
@@ -794,7 +799,7 @@ mod test {
             db.iter_store_from(*lifetime, test_storage, None, &mut snapshotter);
             assert_eq!(
                 1, found_metrics,
-                "We only expect 1 metric for this lifetime."
+                "We only expect 1 metric for lifetime {lifetime:?}."
             );
         }
     }
