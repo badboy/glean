@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS telemetry
   lifetime TEXT NOT NULL,
   value BLOB,
   updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-  UNIQUE(id, ping)
+  UNIQUE(id, ping, lifetime)
 );
 CREATE TABLE IF NOT EXISTS pings
 (
@@ -270,7 +270,7 @@ impl Database {
             telemetry (id, ping, lifetime, value, updated_at)
         VALUES
             (?1, ?2, ?3, ?4, DATETIME('now'))
-        ON CONFLICT(id, ping) DO UPDATE SET
+        ON CONFLICT(id, ping, lifetime) DO UPDATE SET
             lifetime = excluded.lifetime,
             value = excluded.value,
             updated_at = excluded.updated_at
@@ -360,7 +360,7 @@ impl Database {
             telemetry (id, ping, lifetime, value, updated_at)
         VALUES
             (?1, ?2, ?3, ?4, DATETIME('now'))
-        ON CONFLICT(id, ping) DO UPDATE SET
+        ON CONFLICT(id, ping, lifetime) DO UPDATE SET
             lifetime = excluded.lifetime,
             value = excluded.value,
             updated_at = excluded.updated_at
