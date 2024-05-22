@@ -42,7 +42,7 @@ thiserror = "1.0.4"
 uniffi = { version = "0.27.0", default-features = false }
 time = "0.1.40"
 env_logger = { version = "0.10.0", default-features = false, optional = true }
-rusqlite = { version = "0.30.0", features = ["bundled", "trace"] }
+rusqlite = { version = "0.30.0", features = ["bundled"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android_logger = { version = "0.12.0", default-features = false }
