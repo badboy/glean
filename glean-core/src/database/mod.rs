@@ -4,7 +4,6 @@
 
 use std::fs;
 use std::num::NonZeroU64;
-use std::panic::AssertUnwindSafe;
 use std::path::Path;
 use std::str;
 
@@ -23,7 +22,11 @@ macro_rules! unwrap_or {
     };
 }
 
-use rusqlite::{params, Connection, OpenFlags};
+use connection::Connection;
+use connection::ConnectionType;
+use rusqlite::params;
+use schema::Schema;
+use store::StorePath;
 
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::metrics::Metric;
@@ -31,34 +34,15 @@ use crate::Glean;
 use crate::Lifetime;
 use crate::Result;
 
-const SCHEMA: &str = r#"
-BEGIN;
-CREATE TABLE IF NOT EXISTS telemetry
-(
-  id TEXT NOT NULL,
-  ping TEXT NOT NULL,
-  lifetime TEXT NOT NULL,
-  value BLOB,
-  updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-  UNIQUE(id, ping, lifetime)
-);
-CREATE TABLE IF NOT EXISTS pings
-(
-  id TEXT NOT NULL,
-  ping TEXT NOT NULL,
-  payload TEXT NOT NULL,
-  state TEXT NOT NULL,
-  updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-  UNIQUE(id, ping)
-);
-COMMIT;
-"#;
+mod connection;
+mod schema;
+mod store;
 
 pub struct Database {
     /// The database connection.
     ///
     /// FIXME: It's probably not unwind safe.
-    conn: AssertUnwindSafe<Connection>,
+    conn: connection::Connection,
 }
 
 impl std::fmt::Debug for Database {
@@ -79,30 +63,10 @@ impl Database {
         log::debug!("Database path: {:?}", path.display());
 
         fs::create_dir_all(&path)?;
-        let sql_path = path.join("telemetry.db");
-        let conn = Connection::open_with_flags(
-            sql_path,
-            OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
-        )?;
+        let store_path = StorePath::for_storage_dir(path);
+        let conn = Connection::new::<Schema, _>(&store_path, ConnectionType::ReadWrite).unwrap();
 
-        // as per application-servers, components/places/src/db/db.rs
-        #[cfg(target_os = "android")]
-        {
-            // `temp_store = 2` is required on Android to force the DB to keep temp
-            // files in memory, since on Android there's no tmp partition. See
-            // https://github.com/mozilla/mentat/issues/505.
-            db.set_pragma("temp_store", 2)?;
-        }
-        conn.pragma_update(None, "journal_mode", "WAL")?;
-        conn.pragma_update(None, "wal_autocheckpoint", 62)?;
-        conn.pragma_update(None, "page_size", 32768)?;
-        conn.pragma_update(None, "cache_size", -6144)?;
-        conn.execute_batch(SCHEMA)?;
-        conn.set_prepared_statement_cache_capacity(128);
-
-        let db = Self {
-            conn: AssertUnwindSafe(conn),
-        };
+        let db = Self { conn };
 
         Ok(db)
     }
@@ -161,32 +125,35 @@ impl Database {
         } else {
             iter_sql.to_string()
         };
-        let mut stmt = unwrap_or!(self.conn.prepare_cached(&iter_sql), return);
-        let mut rows = if let Some(metric_key) = metric_key {
-            unwrap_or!(
-                stmt.query(params![
-                    lifetime.as_str().to_string(),
-                    storage_name,
-                    metric_key
-                ]),
-                return
-            )
-        } else {
-            unwrap_or!(
-                stmt.query(params![lifetime.as_str().to_string(), storage_name]),
-                return
-            )
-        };
 
-        while let Ok(Some(row)) = rows.next() {
-            let metric_id: String = unwrap_or!(row.get(0), continue);
-            let blob: Vec<u8> = unwrap_or!(row.get(1), continue);
-            let metric: Metric = match bincode::deserialize(&blob) {
-                Ok(metric) => metric,
-                _ => continue,
-            };
-            transaction_fn(metric_id.as_bytes(), &metric);
-        }
+        self.conn
+            .read(|conn| {
+                let mut stmt = conn.prepare_cached(&iter_sql).unwrap();
+                let mut rows = if let Some(metric_key) = metric_key {
+                    stmt.query(params![
+                        lifetime.as_str().to_string(),
+                        storage_name,
+                        metric_key
+                    ])
+                    .unwrap()
+                } else {
+                    stmt.query(params![lifetime.as_str().to_string(), storage_name])
+                        .unwrap()
+                };
+
+                while let Ok(Some(row)) = rows.next() {
+                    let metric_id: String = unwrap_or!(row.get(0), continue);
+                    let blob: Vec<u8> = unwrap_or!(row.get(1), continue);
+                    let metric: Metric = match bincode::deserialize(&blob) {
+                        Ok(metric) => metric,
+                        _ => continue,
+                    };
+                    transaction_fn(metric_id.as_bytes(), &metric);
+                }
+
+                Result::<(), ()>::Ok(())
+            })
+            .unwrap()
     }
 
     /// Determines if the storage has the given metric.
@@ -217,13 +184,17 @@ impl Database {
             AND id = ?3
         "#;
 
-        let mut stmt = unwrap_or!(self.conn.prepare_cached(has_metric_sql), return false);
-        let mut metric_iter = unwrap_or!(
-            stmt.query([lifetime.as_str(), storage_name, metric_identifier]),
-            return false
-        );
+        self.conn
+            .read(|conn| {
+                let mut stmt = unwrap_or!(conn.prepare_cached(has_metric_sql), return Ok(false));
+                let mut metric_iter = unwrap_or!(
+                    stmt.query([lifetime.as_str(), storage_name, metric_identifier]),
+                    return Ok(false)
+                );
 
-        metric_iter.next().map(|m| m.is_some()).unwrap_or(false)
+                Result::<bool, ()>::Ok(metric_iter.next().map(|m| m.is_some()).unwrap_or(false))
+            })
+            .unwrap_or(false)
     }
 
     /// Records a metric in the underlying storage system.
@@ -276,11 +247,14 @@ impl Database {
             updated_at = excluded.updated_at
         "#;
 
-        let mut stmt = self.conn.prepare_cached(insert_sql)?;
-        let encoded = bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
-        stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
+        self.conn.write(|conn| {
+            let mut stmt = conn.prepare_cached(insert_sql)?;
+            let encoded =
+                bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
+            stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
 
-        Ok(())
+            Ok(())
+        })
     }
 
     /// Records the provided value, with the given lifetime,
@@ -341,40 +315,41 @@ impl Database {
         LIMIT 1
         "#;
 
-        let tx = self.conn.unchecked_transaction()?;
-        let new_value = {
-            let mut stmt = tx.prepare_cached(&find_sql)?;
-            let mut rows = stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
+        self.conn.write(|tx| {
+            let new_value = {
+                let mut stmt = tx.prepare_cached(&find_sql)?;
+                let mut rows =
+                    stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
 
-            if let Ok(Some(row)) = rows.next() {
-                let blob: Vec<u8> = row.get(0)?;
-                let old_value = bincode::deserialize(&blob).ok();
-                transform(old_value)
-            } else {
-                transform(None)
+                if let Ok(Some(row)) = rows.next() {
+                    let blob: Vec<u8> = row.get(0)?;
+                    let old_value = bincode::deserialize(&blob).ok();
+                    transform(old_value)
+                } else {
+                    transform(None)
+                }
+            };
+
+            let insert_sql = r#"
+                    INSERT INTO
+                        telemetry (id, ping, lifetime, value, updated_at)
+                    VALUES
+                        (?1, ?2, ?3, ?4, DATETIME('now'))
+                    ON CONFLICT(id, ping, lifetime) DO UPDATE SET
+                        lifetime = excluded.lifetime,
+                        value = excluded.value,
+                        updated_at = excluded.updated_at
+                    "#;
+
+            {
+                let mut stmt = tx.prepare_cached(insert_sql)?;
+                let encoded =
+                    bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
+                stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
             }
-        };
 
-        let insert_sql = r#"
-        INSERT INTO
-            telemetry (id, ping, lifetime, value, updated_at)
-        VALUES
-            (?1, ?2, ?3, ?4, DATETIME('now'))
-        ON CONFLICT(id, ping, lifetime) DO UPDATE SET
-            lifetime = excluded.lifetime,
-            value = excluded.value,
-            updated_at = excluded.updated_at
-        "#;
-
-        {
-            let mut stmt = tx.prepare_cached(insert_sql)?;
-            let encoded =
-                bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-            stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
-        }
-
-        tx.commit()?;
-        Ok(())
+            Ok(())
+        })
     }
 
     /// Clears a storage (only Ping Lifetime).
@@ -392,9 +367,11 @@ impl Database {
     /// This function will **not** panic on database errors.
     pub fn clear_ping_lifetime_storage(&self, storage_name: &str) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2";
-        let mut stmt = self.conn.prepare_cached(clear_sql)?;
-        stmt.execute([Lifetime::Ping.as_str(), storage_name])?;
-        Ok(())
+        self.conn.write(|tx| {
+            let mut stmt = tx.prepare_cached(clear_sql)?;
+            stmt.execute([Lifetime::Ping.as_str(), storage_name])?;
+            Ok(())
+        })
     }
 
     /// Removes a single metric from the storage.
@@ -422,9 +399,11 @@ impl Database {
         metric_id: &str,
     ) -> Result<()> {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2 AND id = ?3";
-        let mut stmt = self.conn.prepare_cached(clear_sql)?;
-        stmt.execute([lifetime.as_str(), storage_name, metric_id])?;
-        Ok(())
+        self.conn.write(|tx| {
+            let mut stmt = tx.prepare_cached(clear_sql)?;
+            stmt.execute([lifetime.as_str(), storage_name, metric_id])?;
+            Ok(())
+        })
     }
 
     /// Clears all the metrics in the database, for the provided lifetime.
@@ -436,12 +415,15 @@ impl Database {
     /// * This function will **not** panic on database errors.
     pub fn clear_lifetime(&self, lifetime: Lifetime) {
         let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1";
-        let mut stmt = unwrap_or!(self.conn.prepare_cached(clear_sql), return);
-        let res = stmt.execute([lifetime.as_str()]);
+        _ = self.conn.write(|tx| {
+            let mut stmt = tx.prepare_cached(clear_sql)?;
+            let res = stmt.execute([lifetime.as_str()]);
 
-        if let Err(e) = res {
-            log::warn!("Could not clear store for lifetime {:?}: {:?}", lifetime, e);
-        }
+            if let Err(e) = res {
+                log::warn!("Could not clear store for lifetime {:?}: {:?}", lifetime, e);
+            }
+            Result::<(), rusqlite::Error>::Ok(())
+        });
     }
 
     /// Clears all metrics in the database.
