@@ -1,8 +1,6 @@
 name: mozilla/glean/lint
 on:
   push:
-    branches:
-    - main
 jobs:
   Lint YAML with yamllint:
     if: github.ref != 'refs/heads/release'

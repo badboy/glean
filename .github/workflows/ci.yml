@@ -1,8 +1,6 @@
 name: mozilla/glean/ci
 on:
   push:
-    branches:
-    - main
 jobs:
   Rust tests - stable:
     if: github.ref != 'refs/heads/release'
