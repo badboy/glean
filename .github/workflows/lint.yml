@@ -1,0 +1,140 @@
+name: mozilla/glean/lint
+on:
+  push:
+    branches:
+    - main
+jobs:
+  Lint YAML with yamllint:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.8
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - run: pip install yamllint
+    - run: make lint-yaml
+  License check:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Install cargo-deny
+      run: |-
+        DENY_VERSION=0.14.20
+        DENY="cargo-deny-${DENY_VERSION}-x86_64-unknown-linux-musl"
+        DENY_SHA256=1c9f8cfc23647346f1aa7ba0ed3167191f3198aba3dc5a957fda6f85a82fc424
+        curl -sfSL --retry 5 -O "https://github.com/EmbarkStudios/cargo-deny/releases/download/${DENY_VERSION}/${DENY}.tar.gz"
+        echo "${DENY_SHA256} *${DENY}.tar.gz" | shasum -a 256 -c -
+        tar -xvf "${DENY}.tar.gz"
+        mv "${DENY}/cargo-deny" ~/.cargo/bin/cargo-deny
+        chmod +x ~/.cargo/bin/cargo-deny
+    - name: Run license check
+      run: cargo deny check licenses
+    - name: Run dependency ban check
+      run: cargo deny check bans
+  Lint Rust with clippy:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - run: rustup component add clippy
+    - run: cargo clippy --version
+    - name: Install required Python dependencies
+      run: |-
+        sudo apt update
+        sudo apt install --yes --no-install-recommends \
+          python3.10-venv
+    - name: Clippy
+      run: make lint-rust
+  Docs internal metrics check:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.10
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Internal metrics docs consistency check
+      run: |-
+        make docs-metrics
+        if ! git diff --exit-code HEAD -- docs/user/collected-metrics/metrics.md; then
+          echo "=================================================="
+          echo "metrics.md is different from what's stored in git."
+          echo "Please regenerate the file using:"
+          echo "    make docs-metrics"
+          echo "Commit the modified file and push."
+          echo "=================================================="
+          exit 1
+        fi
+  Lint Android with ktlint and detekt:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: cimg/android:2024.01.1-browsers
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/android-setup"
+    - run: "./gradlew --no-daemon lint"
+    - run: "./gradlew --no-daemon ktlint"
+    - run: "./gradlew --no-daemon detekt"
+  Lint Python:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.10
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/install-rustup"
+    - name: Run uniffi-bindgen
+      run: make bindgen-python
+    - name: Python lints
+      run: make lint-python
+  Check vendored schema:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Check vendored schema for upstream updates
+      run: |-
+        bin/update-schema.sh HEAD
+        if ! git diff --exit-code HEAD -- glean-core/preview/tests/glean.1.schema.json; then
+          echo "===================================="
+          echo "Latest schema from upstream changed."
+          echo "Please regenerate the file using:"
+          echo "    bin/update-schema.sh latest"
+          echo "Commit the modified files and push."
+          echo "===================================="
+          exit 1
+        fi
+  Check Rust formatting:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - run: rustup component add rustfmt
+    - run: rustfmt --version
+    - run: cargo fmt -- --check
+  Check Swift formatting:
+    if: github.ref != 'refs/heads/release'
+    runs-on: macos-latest
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '15.1'
+    - uses: actions/checkout@v4.1.0
+    - name: Install lint tools
+      run: |-
+        export HOMEBREW_NO_AUTO_UPDATE=1
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        brew install swiftlint
+    - name: Run swiftlint
+      run: |-
+        swiftlint version
+        swiftlint --strict

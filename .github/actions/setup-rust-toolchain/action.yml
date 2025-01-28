@@ -1,0 +1,20 @@
+name: setup-rust-toolchain
+inputs:
+  rust-version:
+    required: false
+    default: stable
+runs:
+  using: composite
+  steps:
+  - name: Turn on RUST_BACKTRACE and RUST_LOG for any job that installs rustc
+    run: |-
+      echo "export RUST_BACKTRACE=1" >> $BASH_ENV
+      echo "export RUST_LOG=glean_core=debug" >> $BASH_ENV
+      echo "export CARGO_INCREMENTAL=0" >> $BASH_ENV
+    shell: bash
+  - name: Setup Rust toolchain
+    run: |-
+      rustup install ${{ inputs.rust-version }}
+      rustup default ${{ inputs.rust-version }}
+      rustc --version
+    shell: bash

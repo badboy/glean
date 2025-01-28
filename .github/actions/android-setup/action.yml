@@ -1,0 +1,12 @@
+name: android-setup
+runs:
+  using: composite
+  steps:
+  - uses: "./.github/actions/install-rustup"
+  - uses: "./.github/actions/setup-rust-toolchain"
+    with:
+      rust-version: stable
+  - uses: "./.github/actions/install-android-ndk"
+  - name: Restrict to Linux builds only
+    run: echo "rust.targets=linux-x86-64" > local.properties
+    shell: bash

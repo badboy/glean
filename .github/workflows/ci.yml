@@ -1,0 +1,424 @@
+name: mozilla/glean/ci
+on:
+  push:
+    branches:
+    - main
+jobs:
+  Rust tests - stable:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-rust"
+    - uses: "./.github/actions/install-mingw"
+    - name: Check RLB on Windows x86_64
+      run: cargo check -p glean --examples --tests --target x86_64-pc-windows-gnu
+    - name: Check RLB on Windows i686
+      run: cargo check -p glean --examples --tests --target i686-pc-windows-gnu
+  Rust tests - minimum version:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-rust"
+      with:
+        rust-version: 1.76.0
+  Android tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: cimg/android:2024.01.1-browsers
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/skip-if-doc-only"
+    - uses: "./.github/actions/android-setup"
+    - name: Remove coredump file restriction
+      run: |-
+        # tell the operating system to remove the file size limit on core dump files
+        ulimit -c unlimited
+    - name: Android tests
+      run: "./gradlew --no-daemon :glean:testDebugUnitTest"
+      env:
+        GRADLE_OPTS: "-Xmx2048m"
+        TARGET_CFLAGS: "-DNDEBUG"
+    - name: Save test results
+      run: |-
+        mkdir -p ~/test-results/junit/
+        mkdir -p ~/test-results/tests/
+        cp -a glean-core/android/build/reports/tests ~/test-results/
+        find glean-core/android/build -type f -regex ".*/build/test-results/.*xml" -exec cp {} ~/test-results/junit/ \;
+      if: always()
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "~/test-results/tests"
+    - name: Detect and gather coredump files
+      run: |-
+        mkdir -p ~/coredumps
+        # Try to copy the core file from a default location. Don't fail if it doesn't exist.
+        cp -a glean-core/android/core ~/coredumps || true
+        # The JVM/Gradle might also produce a log file named like "hs_err_pid3247.log", let's copy that as well
+        find . -type f -name "hs_*.log" | xargs -I% cp -a % ~/coredumps/%
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "~/coredumps"
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "~/test-results"
+    - name: Build Android Sample App
+      run: "./gradlew :glean-sample-app:assembleAndroidTest"
+      env:
+        GRADLE_OPTS: "-Xmx2048m"
+        TARGET_CFLAGS: "-DNDEBUG"
+  iOS build and test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '15.1'
+    - uses: actions/checkout@v4.1.0
+    - name: Show Ruby environment
+      run: |-
+        ruby --version
+        gem env
+    - uses: "./.github/actions/install-rustup"
+    - uses: "./.github/actions/setup-rust-toolchain"
+    - name: restore_cache
+      uses: actions/cache@v3.3.2
+      with:
+        key: swift-docs-gems-v20
+        path: "~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0"
+    - name: Install jazzy
+      run: gem install --no-document jazzy
+    - name: Setup build environment
+      run: |-
+        set -x
+        rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+        # For some reason everything works fine if we use the host clang,
+        # not the Xcode-bundled clang.
+        echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config
+        echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config
+        # List available devices -- allows us to see what's there
+        DEVICES=$(xcrun xctrace list devices 2>&1)
+        echo "$DEVICES"
+        # Pick a device and start it
+        UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 15 Simulator (17' | awk -F'[()]' '{print $4}')
+        xcrun simctl boot "$UUID"
+        # Store build type for use in cache key
+        if [ -z "${{ github.ref }}" ]; then
+          echo "debug" > buildtype.txt
+        else
+          echo "release" > buildtype.txt
+        fi
+    - name: restore_cache
+      uses: actions/cache@v3.3.2
+      with:
+        key: v2-cargo-cache-{{arch}}-{{checksum "buildtype.txt"}}-{{checksum "Cargo.lock"}}
+        path: |-
+          /Users/distiller/.cargo/registry
+          target
+        restore-keys: v2-cargo-cache-{{arch}}-{{checksum "buildtype.txt"}}-{{checksum "Cargo.lock"}}
+    - name: Run iOS build
+      run: bash bin/run-ios-build.sh
+    - name: Run iOS tests
+      run: |-
+        if git log -1 "${{ github.sha }}" | grep -q '\[doc only\]'; then
+            echo "Skipping this step. Last commit was tagged to not require tests."
+        else
+            bash bin/run-ios-tests.sh
+        fi
+    - name: Generate Swift documentation
+      run: |-
+        # Skip doc generation for pull requests.
+        if [ "${{ github.ref }}" = "main" ]; then
+          bash bin/build-swift-docs.sh
+        else
+          mkdir -p build/docs/swift
+        fi
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_xcodebuild.log
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_xcodetest.log
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: build//docs/swift
+    - name: Build XCFramework archive
+      run: |-
+        if [ -z "${{ github.ref }}" ]; then
+          # No need to build the framework archive unless we build for a tagged release.
+          circleci-agent step halt
+        else
+          bash bin/build-xcframework.sh
+        fi
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "./Glean.xcframework.zip"
+  iOS integration test:
+    if: github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '15.1'
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/skip-if-doc-only"
+    - uses: "./.github/actions/install-rustup"
+    - uses: "./.github/actions/setup-rust-toolchain"
+    - name: Setup build environment
+      run: |-
+        set -x
+        rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+        # For some reason everything works fine if we use the host clang,
+        # not the Xcode-bundled clang.
+        echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config
+        echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config
+        # List available devices -- allows us to see what's there
+        DEVICES=$(xcrun xctrace list devices 2>&1)
+        echo "$DEVICES"
+        # Pick a device and start it
+        UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 15 Simulator (17' | awk -F'[()]' '{print $4}')
+        xcrun simctl boot "$UUID"
+    - name: Build XCFramework archive
+      run: bash bin/build-xcframework.sh
+    - name: Build sample app
+      run: bash bin/run-ios-sample-app-build.sh
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_sample_xcodebuild.log
+    - name: Run sample app tests
+      run: bash bin/run-ios-sample-app-test.sh
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_sample_xcodetest.log
+  Python 3_8 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.8
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+  Python 3_9 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.9
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+  Python 3_9 on Alpine tests:
+    if: github.ref != 'refs/heads/release'
+    defaults:
+#       # This item was not transformed because there is no suitable equivalent in GitHub Actions
+#       run:
+#         shell: "/bin/sh -leo pipefail"
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.9-alpine
+    env:
+      BASH_ENV: "/etc/profile"
+    steps:
+    - name: Install dependencies
+      run: apk add curl git gcc musl-dev libffi-dev openssh-client make openssl-dev
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+  Python 3_10 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.10
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "./.venv3.10"
+  Python 3_11 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.11
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+  Python 3_12 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.12
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/test-python"
+  Python Windows x86_64 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.8
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/skip-if-doc-only"
+    - uses: "./.github/actions/build-windows-x86_64-wheel"
+    - name: Install Wine
+      run: sudo apt install wine64
+    - name: Install Python for Windows
+      run: |-
+        wget https://www.python.org/ftp/python/3.8.2/python-3.8.2-embed-amd64.zip
+        mkdir winpython
+        unzip python-3.8.2-embed-amd64.zip -d winpython
+        echo "export WINPYTHON=\"wine64-stable winpython/python.exe\"" >> $BASH_ENV
+    - uses: "./.github/actions/install-python-windows-deps"
+    - name: Build bcryptprimitives.dll shim
+      run: |-
+        rustc tools/patches/bcryptprimitives.rs -Copt-level=3 -Clto=fat --out-dir wine_shims --target x86_64-pc-windows-gnu
+        # This preloads our bcryptprimitives shim.
+        shimpath='Z:\\\\home\\\\circleci\\\\project\\\\wine_shims\\\\bcryptprimitives.dll'
+        echo "import ctypes; ctypes.cdll.LoadLibrary('$shimpath')" >> winpython/sitecustomize.py
+    - name: Run tests
+      run: "$WINPYTHON -m pytest -s glean-core/python/tests"
+  Python Windows i686 tests:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.8
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/skip-if-doc-only"
+    - uses: "./.github/actions/build-windows-i686-wheel"
+    - name: Install Wine
+      run: |-
+        sudo dpkg --add-architecture i386
+        sudo apt update
+        sudo apt install wine32
+    - name: Install Python for Windows
+      run: |-
+        wget https://www.python.org/ftp/python/3.8.2/python-3.8.2-embed-win32.zip
+        mkdir winpython
+        unzip python-3.8.2-embed-win32.zip -d winpython
+        echo "export WINPYTHON=\"wine winpython/python.exe\"" >> $BASH_ENV
+    - uses: "./.github/actions/install-python-windows-deps"
+    - name: Build bcryptprimitives.dll shim
+      run: |-
+        rustc tools/patches/bcryptprimitives.rs -Copt-level=3 -Clto=fat --out-dir wine_shims --target i686-pc-windows-gnu
+        # This preloads our bcryptprimitives shim.
+        shimpath='Z:\\\\home\\\\circleci\\\\project\\\\wine_shims\\\\bcryptprimitives.dll'
+        echo "import ctypes; ctypes.cdll.LoadLibrary('$shimpath')" >> winpython/sitecustomize.py
+    - name: Run tests
+      run: "$WINPYTHON -m pytest -s glean-core/python/tests"
+  Generate Rust documentation:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1.76
+    needs:
+    - docs-spellcheck
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Version information
+      run: rustc --version; cargo --version; rustup --version
+    - name: Install mdbook-dtmo
+      run: |-
+        MDBOOK_VERSION=0.15.2
+        MDBOOK="mdbook-dtmo-${MDBOOK_VERSION}-x86_64-unknown-linux-musl.tar.gz"
+        MDBOOK_SHA256=87f5cb874faadc745f033b646d358669b172edf19d2ca0a4e291a9c627e52e13
+        curl -sfSL --retry 5 -O "https://github.com/badboy/mdbook-dtmo/releases/download/${MDBOOK_VERSION}/${MDBOOK}"
+        echo "${MDBOOK_SHA256} *${MDBOOK}" | shasum -a 256 -c -
+        tar -xvf "${MDBOOK}"
+        # We rename it to mdbook here, so other tools keep working as expected
+        mv mdbook-dtmo ~/.cargo/bin/mdbook
+        mdbook --version
+    - name: Build Rust documentation
+      run: bin/build-rust-docs.sh
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: |-
+          build//docs/book
+          build//docs/dev
+          build//docs/docs
+          build//docs/shared
+          build//docs/index.html
+  Generate Python documentation:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.10
+    needs:
+    - Python 3_10 tests
+    steps:
+    - uses: "./.github/actions/install-rustup"
+    - uses: "./.github/actions/setup-rust-toolchain"
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/download-artifact@v4.1.0
+      with:
+        path: "."
+    - name: Generate Python docs
+      run: make docs-python
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: build//docs/python
+  docs-linkcheck:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: node:22.6
+    needs:
+    - Generate Rust documentation
+    - Generate Python documentation
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Install linkchecker
+      run: npm install link-checker
+    - uses: actions/download-artifact@v4.1.0
+      with:
+        path: build/
+    - name: Check internal documentation links
+      run: make linkcheck-raw
+  docs-spellcheck:
+    if: github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - name: Upgrade packages
+      run: sudo apt update
+    - name: Install aspell
+      run: sudo apt install aspell aspell-en
+    - name: Check documentation spelling
+      run: bin/spellcheck.sh list
+  docs-deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    container:
+      image: node:22.6
+    needs:
+    - docs-linkcheck
+    - iOS build and test
+    steps:
+    - uses: actions/checkout@v4.1.0
+    - uses: actions/download-artifact@v4.1.0
+      with:
+        path: build/
+    - name: Disable jekyll builds
+      run: touch build/docs/.nojekyll
+    - name: Show contents
+      run: ls -R
+    # Ensure parameter if_key_exists is set correctly
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2.6.1
+      with:
+        key: "${{ secrets.CIRCLE_CI_SSH_KEY }}"
+        name: circle_ci_id_rsa
+        known_hosts: "${{ secrets.CIRCLE_CI_KNOWN_HOSTS }}"
+        if_key_exists: fail
+    - name: Deploy docs to gh-pages branch
+      run: |-
+        git config user.email "jrediger@mozilla.com"
+        git config user.name "CircleCI docs-deploy job"
+        npm install gh-pages@6.1.1
+        npx gh-pages --dotfiles --message "[skip ci] Updates" --dist build/docs

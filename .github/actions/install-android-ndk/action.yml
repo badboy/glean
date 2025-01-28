@@ -1,0 +1,10 @@
+name: install-android-ndk
+runs:
+  using: composite
+  steps:
+  - name: Install missing Android SDK & NDK
+    run: |-
+      sdkmanager \
+        "build-tools;34.0.0" \
+        "ndk;26.2.11394342"
+    shell: bash

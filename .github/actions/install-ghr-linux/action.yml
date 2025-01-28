@@ -1,0 +1,14 @@
+name: install-ghr-linux
+runs:
+  using: composite
+  steps:
+  - name: Get ghr release tool
+    run: |-
+      GHR_VERSION=v0.16.2
+      GHR=ghr_${GHR_VERSION}_linux_amd64
+      GHR_SHA256=084ed9819dff71ea77f77a3071a643b6d1cbe5d2ab57bb5f56bb23de17189cd0
+      curl -sfSL --retry 5 -O "https://github.com/tcnksm/ghr/releases/download/${GHR_VERSION}/${GHR}.tar.gz"
+      echo "${GHR_SHA256} *${GHR}.tar.gz" | sha256sum -c -
+      tar -xf "${GHR}.tar.gz"
+      cp ./${GHR}/ghr ghr
+    shell: bash

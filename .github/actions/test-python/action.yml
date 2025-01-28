@@ -1,0 +1,26 @@
+name: test-python
+runs:
+  using: composite
+  steps:
+  - uses: "./.github/actions/install-rustup"
+  - uses: "./.github/actions/setup-rust-toolchain"
+  - name: Remove coredump file restriction
+    run: |-
+      # tell the operating system to remove the file size limit on core dump files
+      ulimit -c unlimited
+    shell: bash
+  - name: Python tests
+    run: |-
+      export PYTEST_ARGS=-v
+      make test-python
+    shell: bash
+  - name: Detect and gather coredump files
+    run: |-
+      mkdir -p ~/coredumps
+      # Try to copy the core file(s). Don't fail if they don't exist.
+      cp core.* ~/coredumps || true
+    if: always()
+    shell: bash
+  - uses: actions/upload-artifact@v4.1.0
+    with:
+      path: "~/coredumps"

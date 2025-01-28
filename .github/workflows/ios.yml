@@ -1,0 +1,140 @@
+name: mozilla/glean/iOS
+on:
+  push:
+    branches:
+    - main
+jobs:
+  hold:
+    environment:
+      name: approval
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release'
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo 'approved'
+  iOS build and test:
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release'
+    runs-on: macos-latest
+    needs:
+    - hold
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '15.1'
+    - uses: actions/checkout@v4.1.0
+    - name: Show Ruby environment
+      run: |-
+        ruby --version
+        gem env
+    - uses: "./.github/actions/install-rustup"
+    - uses: "./.github/actions/setup-rust-toolchain"
+    - name: restore_cache
+      uses: actions/cache@v3.3.2
+      with:
+        key: swift-docs-gems-v20
+        path: "~/.rbenv/versions/3.1.4/lib/ruby/gems/3.1.0"
+    - name: Install jazzy
+      run: gem install --no-document jazzy
+    - name: Setup build environment
+      run: |-
+        set -x
+        rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+        # For some reason everything works fine if we use the host clang,
+        # not the Xcode-bundled clang.
+        echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config
+        echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config
+        # List available devices -- allows us to see what's there
+        DEVICES=$(xcrun xctrace list devices 2>&1)
+        echo "$DEVICES"
+        # Pick a device and start it
+        UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 15 Simulator (17' | awk -F'[()]' '{print $4}')
+        xcrun simctl boot "$UUID"
+        # Store build type for use in cache key
+        if [ -z "${{ github.ref }}" ]; then
+          echo "debug" > buildtype.txt
+        else
+          echo "release" > buildtype.txt
+        fi
+    - name: restore_cache
+      uses: actions/cache@v3.3.2
+      with:
+        key: v2-cargo-cache-{{arch}}-{{checksum "buildtype.txt"}}-{{checksum "Cargo.lock"}}
+        path: |-
+          /Users/distiller/.cargo/registry
+          target
+        restore-keys: v2-cargo-cache-{{arch}}-{{checksum "buildtype.txt"}}-{{checksum "Cargo.lock"}}
+    - name: Run iOS build
+      run: bash bin/run-ios-build.sh
+    - name: Run iOS tests
+      run: |-
+        if git log -1 "${{ github.sha }}" | grep -q '\[doc only\]'; then
+            echo "Skipping this step. Last commit was tagged to not require tests."
+        else
+            bash bin/run-ios-tests.sh
+        fi
+    - name: Generate Swift documentation
+      run: |-
+        # Skip doc generation for pull requests.
+        if [ "${{ github.ref }}" = "main" ]; then
+          bash bin/build-swift-docs.sh
+        else
+          mkdir -p build/docs/swift
+        fi
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_xcodebuild.log
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_xcodetest.log
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: build//docs/swift
+    - name: Build XCFramework archive
+      run: |-
+        if [ -z "${{ github.ref }}" ]; then
+          # No need to build the framework archive unless we build for a tagged release.
+          circleci-agent step halt
+        else
+          bash bin/build-xcframework.sh
+        fi
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: "./Glean.xcframework.zip"
+  iOS integration test:
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release'
+    runs-on: macos-latest
+    needs:
+    - hold
+    steps:
+    - uses: maxim-lobanov/setup-xcode@v1.6.0
+      with:
+        xcode-version: '15.1'
+    - uses: actions/checkout@v4.1.0
+    - uses: "./.github/actions/skip-if-doc-only"
+    - uses: "./.github/actions/install-rustup"
+    - uses: "./.github/actions/setup-rust-toolchain"
+    - name: Setup build environment
+      run: |-
+        set -x
+        rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+        # For some reason everything works fine if we use the host clang,
+        # not the Xcode-bundled clang.
+        echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config
+        echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config
+        # List available devices -- allows us to see what's there
+        DEVICES=$(xcrun xctrace list devices 2>&1)
+        echo "$DEVICES"
+        # Pick a device and start it
+        UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 15 Simulator (17' | awk -F'[()]' '{print $4}')
+        xcrun simctl boot "$UUID"
+    - name: Build XCFramework archive
+      run: bash bin/build-xcframework.sh
+    - name: Build sample app
+      run: bash bin/run-ios-sample-app-build.sh
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_sample_xcodebuild.log
+    - name: Run sample app tests
+      run: bash bin/run-ios-sample-app-test.sh
+    - uses: actions/upload-artifact@v4.1.0
+      with:
+        path: raw_sample_xcodetest.log

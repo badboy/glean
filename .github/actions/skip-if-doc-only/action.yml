@@ -1,0 +1,11 @@
+name: skip-if-doc-only
+runs:
+  using: composite
+  steps:
+  - name: Check doc only skip condition
+    run: |-
+      if git log -1 "${{ github.sha }}" | grep -q '\[doc only\]'; then
+          echo "Skipping this step. Last commit was tagged to not require tests."
+          circleci-agent step halt
+      fi
+    shell: bash

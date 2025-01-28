@@ -1,0 +1,13 @@
+name: build-windows-x86_64-wheel
+runs:
+  using: composite
+  steps:
+  - uses: "./.github/actions/install-rustup"
+  - uses: "./.github/actions/setup-rust-toolchain"
+  - uses: "./.github/actions/install-mingw"
+  - name: Install Python development tools for host
+    run: make setup-python
+    shell: bash
+  - name: Build Windows wheel
+    run: make build-python-wheel GLEAN_BUILD_TARGET=x86_64-pc-windows-gnu
+    shell: bash
