@@ -11,8 +11,8 @@ use std::collections::HashMap;
 use serde_json::{json, Value as JsonValue};
 
 use crate::coverage::record_coverage;
-use crate::database::Database;
 use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
+use crate::database::sqlite::Database;
 use crate::metrics::Metric;
 use crate::Lifetime;
 
@@ -133,13 +133,13 @@ impl StorageManager {
             }
         };
 
-        storage.iter_store_from(Lifetime::Ping, store_name, None, &mut snapshotter);
-        storage.iter_store_from(Lifetime::Application, store_name, None, &mut snapshotter);
-        storage.iter_store_from(Lifetime::User, store_name, None, &mut snapshotter);
+        storage.iter_store(Lifetime::Ping, store_name, &mut snapshotter);
+        storage.iter_store(Lifetime::Application, store_name, &mut snapshotter);
+        storage.iter_store(Lifetime::User, store_name, &mut snapshotter);
 
         // Add send in all pings client.annotations
         if store_name != "glean_client_info" {
-            storage.iter_store_from(Lifetime::Application, "all-pings", None, snapshotter);
+            storage.iter_store(Lifetime::Application, "all-pings", snapshotter);
         }
 
         if clear_store {
@@ -182,7 +182,7 @@ impl StorageManager {
             }
         };
 
-        storage.iter_store_from(metric_lifetime, store_name, None, &mut snapshotter);
+        storage.iter_store(metric_lifetime, store_name, &mut snapshotter);
 
         snapshot
     }
@@ -251,7 +251,7 @@ impl StorageManager {
             }
         };
 
-        storage.iter_store_from(Lifetime::Application, store_name, None, &mut snapshotter);
+        storage.iter_store(Lifetime::Application, store_name, &mut snapshotter);
 
         if snapshot.is_empty() {
             None

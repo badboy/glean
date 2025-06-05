@@ -430,6 +430,9 @@ impl Database {
             Ok(())
         })
     }
+    pub fn clear_lifetime_storage(&self, lifetime: Lifetime, storage_name: &str) -> Result<()> {
+        Ok(())
+    }
 
     /// Removes a single metric from the storage.
     ///

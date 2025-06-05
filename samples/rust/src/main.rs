@@ -249,12 +249,12 @@ fn main() {
     glean_metrics::prototype.submit(None);
     glean_metrics::usage_reporting.submit(None);
 
-    glean::set_upload_enabled(false);
-    glean_metrics::usage_reporting.set_enabled(true);
-    glean_metrics::test_metrics::sample_boolean.set(true);
-    _ = glean_metrics::test_metrics::sample_boolean.test_get_value(None);
-    glean_metrics::prototype.submit(None);
-    glean_metrics::usage_reporting.submit(None);
+    //glean::set_upload_enabled(false);
+    //glean_metrics::usage_reporting.set_enabled(true);
+    //glean_metrics::test_metrics::sample_boolean.set(true);
+    //_ = glean_metrics::test_metrics::sample_boolean.test_get_value(None);
+    //glean_metrics::prototype.submit(None);
+    //glean_metrics::usage_reporting.submit(None);
 
     // Need to wait a short time for Glean to actually act.
     thread::sleep(Duration::from_millis(100));
