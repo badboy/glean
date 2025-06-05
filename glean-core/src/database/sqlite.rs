@@ -6,6 +6,7 @@ use std::fs;
 use std::num::NonZeroU64;
 use std::path::Path;
 use std::str;
+use std::time::Duration;
 
 /// Unwrap a `Result`s `Ok` value or do the specified action.
 ///
@@ -24,6 +25,7 @@ macro_rules! unwrap_or {
 
 use connection::Connection;
 use connection::ConnectionType;
+use malloc_size_of::MallocSizeOf;
 use rusqlite::params;
 use rusqlite::types::FromSqlError;
 use rusqlite::Transaction;
@@ -46,6 +48,11 @@ pub struct Database {
     /// FIXME: It's probably not unwind safe.
     conn: connection::Connection,
 }
+impl MallocSizeOf for Database {
+    fn size_of(&self, _ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        0
+    }
+}
 
 impl std::fmt::Debug for Database {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -60,7 +67,12 @@ impl Database {
     ///
     /// This opens the underlying SQLite store and creates
     /// the underlying directory structure.
-    pub fn new(data_path: &Path, _delay_ping_lifetime_io: bool) -> Result<Self> {
+    pub fn new(
+        data_path: &Path,
+        _delay_ping_lifetime_io: bool,
+        _ping_lifetime_threshold: usize,
+        _ping_lifetime_max_time: Duration,
+    ) -> Result<Self> {
         let path = data_path.join("db");
         log::debug!("Database path: {:?}", path.display());
 
