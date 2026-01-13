@@ -897,7 +897,7 @@ impl Database {
                 // to ping_lifetime_data.
                 store.put(&mut writer, key, &rkv::Value::Blob(&encoded))?;
             }
-            writer.commit()?;
+            measure_commit!(self, writer.commit())?;
             Ok(())
         })
     }
