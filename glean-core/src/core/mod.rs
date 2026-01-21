@@ -341,7 +341,7 @@ impl Glean {
 
         {
             let data_store = glean.data_store.as_ref().unwrap();
-            let file_size = data_store.file_size.map(|n| n.get()).unwrap_or(0);
+            let file_size = data_store.file_size().map(|n| n.get()).unwrap_or(0);
 
             // If we have a client ID on disk, we check the database
             if let Some(stored_client_id) = stored_client_id {
