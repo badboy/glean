@@ -11,6 +11,21 @@
 $schema: moz://mozilla.org/schemas/glean/metrics/2-0-0
 
 test.metrics:
+  sample_counter:
+    type: counter
+    description: |
+      Just testing booleans
+    bugs:
+      - https://bugzilla.mozilla.org/123456789
+    data_reviews:
+      - N/A
+    notification_emails:
+      - CHANGE-ME@example.com
+    expires: never
+    send_in_pings:
+      - prototype
+      - usage-reporting
+
   sample_boolean:
     type: boolean
     description: |

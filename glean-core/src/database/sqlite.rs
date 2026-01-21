@@ -297,7 +297,7 @@ impl Database {
             telemetry (id, ping, lifetime, value, updated_at)
         VALUES
             (?1, ?2, ?3, ?4, DATETIME('now'))
-        ON CONFLICT(id, ping, lifetime) DO UPDATE SET
+        ON CONFLICT(id, ping) DO UPDATE SET
             lifetime = excluded.lifetime,
             value = excluded.value,
             updated_at = excluded.updated_at
@@ -393,7 +393,7 @@ impl Database {
                         telemetry (id, ping, lifetime, value, updated_at)
                     VALUES
                         (?1, ?2, ?3, ?4, DATETIME('now'))
-                    ON CONFLICT(id, ping, lifetime) DO UPDATE SET
+                    ON CONFLICT(id, ping) DO UPDATE SET
                         lifetime = excluded.lifetime,
                         value = excluded.value,
                         updated_at = excluded.updated_at

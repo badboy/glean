@@ -117,8 +117,13 @@ fn main() {
     _ = &*glean_metrics::usage_reporting;
     glean::initialize(cfg, client_info);
 
-    glean_metrics::test_metrics::sample_boolean.set(true);
+    glean_metrics::test_metrics::sample_counter.add(1);
+    assert_eq!(
+        Some(2),
+        glean_metrics::test_metrics::sample_counter.test_get_value(None)
+    );
 
+    /*
     use glean_metrics::party::{BalloonsObject, BalloonsObjectItem};
     let balloons = BalloonsObject::from([
         BalloonsObjectItem {
@@ -255,6 +260,7 @@ fn main() {
     //_ = glean_metrics::test_metrics::sample_boolean.test_get_value(None);
     //glean_metrics::prototype.submit(None);
     //glean_metrics::usage_reporting.submit(None);
+    */
 
     // Need to wait a short time for Glean to actually act.
     thread::sleep(Duration::from_millis(100));
