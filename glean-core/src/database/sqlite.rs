@@ -141,7 +141,7 @@ impl Database {
                 let rows = stmt.query_map(params![lifetime.as_str().to_string(), storage_name, metric_key], |row| {
                     let id: String = row.get(0)?;
                     let blob: Vec<u8> = row.get(1)?;
-                    let blob: Metric = bincode::deserialize(&blob).map_err(|_| FromSqlError::InvalidType)?;
+                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
                     Ok((id, blob))
                 }).unwrap();
 
@@ -193,7 +193,7 @@ impl Database {
                 let rows = stmt.query_map(params![lifetime.as_str().to_string(), storage_name], |row| {
                     let id: String = row.get(0)?;
                     let blob: Vec<u8> = row.get(1)?;
-                    let blob: Metric = bincode::deserialize(&blob).map_err(|_| FromSqlError::InvalidType)?;
+                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
                     Ok((id, blob))
                 }).unwrap();
 
@@ -305,7 +305,7 @@ impl Database {
 
         let mut stmt = tx.prepare_cached(insert_sql)?;
         let encoded =
-            bincode::serialize(&metric).expect("IMPOSSIBLE: Serializing metric failed");
+            rmp_serde::to_vec(&metric).expect("IMPOSSIBLE: Serializing metric failed");
         stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
 
         Ok(())
@@ -381,7 +381,7 @@ impl Database {
 
             if let Ok(Some(row)) = rows.next() {
                 let blob: Vec<u8> = row.get(0)?;
-                let old_value = bincode::deserialize(&blob).ok();
+                let old_value = rmp_serde::from_slice(&blob).ok();
                 transform(old_value)
             } else {
                 transform(None)
@@ -402,7 +402,7 @@ impl Database {
         {
             let mut stmt = tx.prepare_cached(insert_sql)?;
             let encoded =
-                bincode::serialize(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
+                rmp_serde::to_vec(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
             stmt.execute(params![key, storage_name, lifetime.as_str(), encoded])?;
         }
 
