@@ -50,7 +50,7 @@ impl ConnectionOpener for Schema {
                lifetime TEXT NOT NULL,
                value BLOB,
                updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-               UNIQUE(id, ping, lifetime)
+               UNIQUE(id, ping)
              );
 
              CREATE TABLE pings(
