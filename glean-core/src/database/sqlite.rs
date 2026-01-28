@@ -294,9 +294,9 @@ impl Database {
     ) -> Result<()> {
         let insert_sql = r#"
         INSERT INTO
-            telemetry (id, ping, lifetime, value, updated_at)
+            telemetry (id, ping, lifetime, labels, value, updated_at)
         VALUES
-            (?1, ?2, ?3, ?4, DATETIME('now'))
+            (?1, ?2, ?3, '', ?4, DATETIME('now'))
         ON CONFLICT(id, ping) DO UPDATE SET
             lifetime = excluded.lifetime,
             value = excluded.value,
@@ -368,16 +368,16 @@ impl Database {
         SELECT value
         FROM telemetry
         WHERE
-            lifetime = ?1
+            id = ?1
             AND ping = ?2
-            AND id = ?3
+            AND lifetime = ?3
         LIMIT 1
         "#;
 
         let new_value = {
             let mut stmt = tx.prepare_cached(&find_sql)?;
             let mut rows =
-                stmt.query(params![lifetime.as_str().to_string(), storage_name, key])?;
+                stmt.query(params![key, storage_name, lifetime.as_str().to_string()])?;
 
             if let Ok(Some(row)) = rows.next() {
                 let blob: Vec<u8> = row.get(0)?;
@@ -390,9 +390,9 @@ impl Database {
 
         let insert_sql = r#"
                     INSERT INTO
-                        telemetry (id, ping, lifetime, value, updated_at)
+                        telemetry (id, ping, lifetime, labels, value, updated_at)
                     VALUES
-                        (?1, ?2, ?3, ?4, DATETIME('now'))
+                        (?1, ?2, ?3, '', ?4, DATETIME('now'))
                     ON CONFLICT(id, ping) DO UPDATE SET
                         lifetime = excluded.lifetime,
                         value = excluded.value,
