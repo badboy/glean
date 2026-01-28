@@ -48,16 +48,18 @@ impl ConnectionOpener for Schema {
                id TEXT NOT NULL,
                ping TEXT NOT NULL,
                lifetime TEXT NOT NULL,
+               labels TEXT NOT NULL, -- can't be null or ON CONFLICT won't work
                value BLOB,
                updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
-               UNIQUE(id, ping)
+               UNIQUE(id, ping, labels)
              );
 
              CREATE TABLE pings(
                id TEXT NOT NULL,
                ping TEXT NOT NULL,
                payload TEXT NOT NULL,
-               state TEXT NOT NULL,
+               metadata TEXT NOT NULL,
+               tries INTEGER DEFAULT 0,
                updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
                UNIQUE(id, ping)
              );",
