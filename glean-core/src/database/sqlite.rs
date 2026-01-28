@@ -37,6 +37,7 @@ use crate::metrics::Metric;
 use crate::Glean;
 use crate::Lifetime;
 use crate::Result;
+use crate::metrics::labeled::strip_label;
 
 mod connection;
 mod schema;
@@ -255,9 +256,15 @@ impl Database {
             return;
         }
 
-        let name = data.identifier(glean);
+        let base_identifer = data.base_identifier();
+        let name = strip_label(&base_identifer);
 
         _ = self.conn.write(|tx| {
+            let mut labels = String::from("");
+            if let Some(checked_labels) = data.check_labels(tx) {
+                labels = checked_labels;
+            }
+
             for ping_name in data.storage_names() {
                 if let Err(e) = self.record_per_lifetime(tx, data.inner.lifetime, ping_name, &name, value) {
                     log::error!(

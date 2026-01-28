@@ -6,10 +6,11 @@ use std::ops::Deref;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use malloc_size_of_derive::MallocSizeOf;
+use rusqlite::Transaction;
 
 use crate::error::{Error, ErrorKind};
 use crate::metrics::dual_labeled_counter::validate_dynamic_key_and_or_category;
-use crate::metrics::labeled::validate_dynamic_label;
+use crate::metrics::labeled::{validate_dynamic_label, validate_dynamic_label_sqlite};
 use crate::Glean;
 use serde::{Deserialize, Serialize};
 
@@ -81,6 +82,8 @@ pub struct CommonMetricData {
 /// the necessary validation to be performed.
 #[derive(Debug, Clone, Deserialize, Serialize, MallocSizeOf, uniffi::Enum)]
 pub enum DynamicLabelType {
+    /// TODO: Static Label -- no validation required
+    //Static(String),
     /// A dynamic label applied from a `LabeledMetric`
     Label(String),
     /// A label applied by a `DualLabeledCounter` that contains a dynamic key
@@ -162,6 +165,28 @@ impl CommonMetricDataInternal {
             self.inner.name.clone()
         } else {
             format!("{}.{}", self.inner.category, self.inner.name)
+        }
+    }
+
+    /// TODO
+    ///
+    /// If `category` is empty, it's ommitted.
+    /// Otherwise, it's the combination of the metric's `category`, `name` and `label`.
+    pub(crate) fn check_labels(&self, tx: &mut Transaction<'_>) -> Option<String> {
+        let base_identifier = self.base_identifier();
+
+        if let Some(label) = &self.inner.dynamic_label {
+            match label {
+                DynamicLabelType::Label(label) => {
+                    validate_dynamic_label_sqlite(tx, &base_identifier, label)
+                }
+                _ => todo!(),
+            }
+        } else {
+            // A static label has been checked on `.get()` and is part of the name (`category.name/label`).
+            // TODO: Store the label in its own property for easier access without string
+            // manipulation.
+            base_identifier.split_once("/").map(|s| s.1.to_string())
         }
     }
 
