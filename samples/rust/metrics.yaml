@@ -57,6 +57,23 @@ test.metrics:
     no_lint:
       - COMMON_PREFIX
 
+  sample_labeled_string:
+    <<: *defaults
+    type: labeled_string
+    description: |
+      Just testing labeled_string
+    bugs:
+      - https://bugzilla.mozilla.org/1907991
+    data_reviews:
+      - N/A
+    notification_emails:
+      - nobody@example.com
+    expires: never
+    send_in_pings:
+      - prototype
+    no_lint:
+      - COMMON_PREFIX
+
   timings:
     <<: *defaults
     type: timing_distribution
