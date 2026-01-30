@@ -487,8 +487,14 @@ impl Database {
             Ok(())
         })
     }
+
     pub fn clear_lifetime_storage(&self, lifetime: Lifetime, storage_name: &str) -> Result<()> {
-        Ok(())
+        let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 AND ping = ?2";
+        self.conn.write(|tx| {
+            let mut stmt = tx.prepare_cached(clear_sql)?;
+            stmt.execute([lifetime.as_str(), storage_name])?;
+            Ok(())
+        })
     }
 
     /// Removes a single metric from the storage.
