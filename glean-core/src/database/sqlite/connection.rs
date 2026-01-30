@@ -107,10 +107,11 @@ impl Connection {
     /// Accesses the database for reading.
     pub fn read<T, E>(
         &self,
-        f: impl FnOnce(&rusqlite::Connection) -> Result<T, E>,
+        f: impl FnOnce(&Transaction<'_>) -> Result<T, E>,
     ) -> Result<T, E> {
-        let conn = self.conn.lock().unwrap();
-        f(&*conn)
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate).unwrap();
+        f(&tx)
     }
 
     /// Accesses the database in a transaction for reading and writing.

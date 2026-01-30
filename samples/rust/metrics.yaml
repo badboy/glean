@@ -26,6 +26,21 @@ test.metrics:
       - prototype
       - usage-reporting
 
+  sample_url:
+    type: url
+    description: |
+      Just testing booleans
+    bugs:
+      - https://bugzilla.mozilla.org/123456789
+    data_reviews:
+      - N/A
+    notification_emails:
+      - CHANGE-ME@example.com
+    expires: never
+    send_in_pings:
+      - prototype
+      - usage-reporting
+
   sample_boolean:
     type: boolean
     description: |

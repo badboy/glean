@@ -26,6 +26,7 @@ macro_rules! unwrap_or {
 use connection::Connection;
 use connection::ConnectionType;
 use malloc_size_of::MallocSizeOf;
+use rusqlite::OptionalExtension;
 use rusqlite::params;
 use rusqlite::types::FromSqlError;
 use rusqlite::Transaction;
@@ -211,6 +212,41 @@ impl Database {
                 Result::<(), ()>::Ok(())
             })
             .unwrap()
+    }
+
+    /// TODO
+    pub fn get_metric(
+        &self,
+        data: &CommonMetricDataInternal,
+        storage_name: &str,
+    ) -> Option<Metric> {
+        let get_metric_sql = r#"
+        SELECT
+            value
+        FROM telemetry
+        WHERE
+            id = ?1
+            AND ping = ?2
+            AND labels = ?3
+        LIMIT 1
+        "#;
+
+        let metric_identifier = &data.base_identifier();
+
+        self.conn
+            .read(|tx| {
+                let mut labels = String::from("");
+                if let Some(checked_labels) = data.check_labels(tx) {
+                    labels = checked_labels;
+                }
+
+                let mut stmt = tx.prepare_cached(get_metric_sql)?;
+                stmt.query_one([metric_identifier, storage_name, &labels], |row| {
+                    let blob: Vec<u8> = row.get(0)?;
+                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
+                    Ok(blob)
+                }).optional()
+            }).unwrap_or(None)
     }
 
     /// Determines if the storage has the given metric.
