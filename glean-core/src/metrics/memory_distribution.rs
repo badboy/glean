@@ -257,7 +257,7 @@ impl MemoryDistributionMetric {
             .into()
             .unwrap_or_else(|| &self.meta().inner.send_in_pings[0]);
 
-        match StorageManager.snapshot_metric_for_test(
+        let res = match StorageManager.snapshot_metric_for_test(
             glean.storage(),
             queried_ping_name,
             &self.meta.identifier(glean),
@@ -265,7 +265,8 @@ impl MemoryDistributionMetric {
         ) {
             Some(Metric::MemoryDistribution(hist)) => Some(snapshot(&hist)),
             _ => None,
-        }
+        };
+        res
     }
 
     /// **Exported for test purposes.**
