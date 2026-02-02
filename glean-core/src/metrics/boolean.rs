@@ -97,11 +97,9 @@ impl BooleanMetric {
     pub fn get_value(&self, glean: &Glean, ping_name: Option<&str>) -> Option<bool> {
         let queried_ping_name = ping_name.unwrap_or_else(|| &self.meta().inner.send_in_pings[0]);
 
-        match StorageManager.snapshot_metric_for_test(
-            glean.storage(),
+        match glean.storage().get_metric(
+            self.meta(),
             queried_ping_name,
-            &self.meta.identifier(glean),
-            self.meta.inner.lifetime,
         ) {
             Some(Metric::Boolean(b)) => Some(b),
             _ => None,
