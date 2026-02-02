@@ -195,6 +195,7 @@ impl Glean {
     /// sort of management should only happen in the main process.
     pub fn new_for_subprocess(cfg: &InternalConfiguration, scan_directories: bool) -> Result<Self> {
         log::info!("Creating new Glean v{}", GLEAN_VERSION);
+        log::debug!("Upload enabled: {}", cfg.upload_enabled);
 
         let application_id = sanitize_application_id(&cfg.application_id);
         if application_id.is_empty() {
@@ -739,7 +740,7 @@ impl Glean {
     /// Whether the flag was different from the current value,
     /// and actual work was done to clear or reinstate metrics.
     pub fn set_upload_enabled(&mut self, flag: bool) -> bool {
-        log::info!("Upload enabled: {:?}", flag);
+        log::info!("Set upload enabled: {:?}", flag);
 
         if self.upload_enabled != flag {
             if flag {
