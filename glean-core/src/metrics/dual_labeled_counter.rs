@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use rusqlite::{Transaction, params};
 
 use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
-use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
+use crate::error_recording::{record_error, record_error_sqlite, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::{CounterMetric, Metric, MetricType};
 use crate::{Glean, TestGetValue};
 
@@ -385,6 +385,15 @@ pub fn validate_dual_label_sqlite(
 ) -> Option<String> {
     let existing_labels_sql = "SELECT DISTINCT labels FROM telemetry WHERE id = ?1";
 
+    // TODO: We can now detect if _either_ key or category contains `RECORD_SEPARATOR` and thus keep
+    // the other potentially valid label.
+    // This needs adjustement of the test `labels_containing_a_record_separator_record_an_error`.
+    if key.contains(RECORD_SEPARATOR) || category.contains(RECORD_SEPARATOR) {
+        let msg = "Label cannot contain the ASCII record separator character (0x1E)".to_string();
+        record_error_sqlite(tx, base_identifier, send_in_pings.to_vec(), ErrorType::InvalidLabel, msg, 1);
+        return Some(format!("{OTHER_LABEL}{RECORD_SEPARATOR}{OTHER_LABEL}"));
+    }
+
     let mut existing_keys = HashSet::new();
     let mut existing_categories = HashSet::new();
     {
@@ -410,19 +419,37 @@ pub fn validate_dual_label_sqlite(
     let mut new_key;
     let mut new_category;
 
-    if existing_keys.contains(key) || existing_keys.len() < MAX_LABELS {
-        new_key = key;
+    if  existing_keys.contains(key) || existing_keys.len() < MAX_LABELS {
+        new_key = label_is_valid_sqlite(key, tx, base_identifier, send_in_pings);
     } else {
         new_key = OTHER_LABEL;
     }
 
     if existing_categories.contains(category) || existing_categories.len() < MAX_LABELS {
-        new_category = category
+        new_category = label_is_valid_sqlite(category, tx, base_identifier, send_in_pings);
     } else {
         new_category = OTHER_LABEL;
     }
 
     return Some(format!("{new_key}{RECORD_SEPARATOR}{new_category}"));
+}
+
+fn label_is_valid_sqlite<'a>(label: &'a str, tx: &mut Transaction, base_identifier: &str, send_in_pings: &[String]) -> &'a str {
+    if label.len() > MAX_LABEL_LENGTH {
+        let msg = format!(
+            "label length {} exceeds maximum of {}",
+            label.len(),
+            MAX_LABEL_LENGTH
+        );
+        record_error_sqlite(tx, base_identifier, send_in_pings.to_vec(), ErrorType::InvalidLabel, msg, 1);
+        OTHER_LABEL
+    } else if label.contains(RECORD_SEPARATOR) {
+        let msg = "Label cannot contain the ASCII record separator character (0x1E)".to_string();
+        record_error_sqlite(tx, base_identifier, send_in_pings.to_vec(), ErrorType::InvalidLabel, msg, 1);
+        return OTHER_LABEL
+    } else {
+        label
+    }
 }
 
 fn label_is_valid(label: &str, glean: &Glean, meta: &CommonMetricDataInternal) -> bool {
