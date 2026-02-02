@@ -327,6 +327,7 @@ pub fn validate_dynamic_key_and_or_category(
         // one(s) to check based on the label variant.
         let (seen_keys, seen_categories) = get_seen_keys_and_categories(meta, glean);
         match label {
+            DynamicLabelType::Static(_) => todo!(),
             DynamicLabelType::Label(ref label) => {
                 record_error(
                     glean,
