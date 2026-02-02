@@ -8,6 +8,8 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::{Arc, Mutex};
 
+use rusqlite::{Transaction, params};
+
 use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
 use crate::error_recording::{record_error, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::{CounterMetric, Metric, MetricType};
@@ -110,32 +112,24 @@ impl DualLabeledCounterMetric {
         match (&self.keys, &self.categories) {
             (None, None) => self
                 .counter
-                .with_dynamic_label(DynamicLabelType::KeyAndCategory(
-                    make_label_from_key_and_category(key, category),
-                )),
+                .with_dynamic_label(DynamicLabelType::KeyAndCategory(key.into(), category.into())),
             (None, _) => {
                 let static_category = self.static_category(category);
-                self.counter.with_dynamic_label(DynamicLabelType::KeyOnly(
-                    make_label_from_key_and_category(key, static_category),
-                ))
+                self.counter.with_dynamic_label(DynamicLabelType::KeyOnly(key.into(), static_category.into()))
             }
             (_, None) => {
                 let static_key = self.static_key(key);
                 self.counter
                     .with_dynamic_label(DynamicLabelType::CategoryOnly(
-                        make_label_from_key_and_category(static_key, category),
+                        static_key.into(), category.into(),
                     ))
             }
             (_, _) => {
                 // Both labels are static and can be validated now
                 let static_key = self.static_key(key);
                 let static_category = self.static_category(category);
-                let name = combine_base_identifier_and_labels(
-                    self.counter.meta().inner.name.as_str(),
-                    static_key,
-                    static_category,
-                );
-                self.counter.with_name(name)
+                let label = format!("{static_key}{RECORD_SEPARATOR}{static_category}");
+                self.counter.with_label(DynamicLabelType::Static(label))
             }
         }
     }
@@ -253,13 +247,13 @@ impl TestGetValue for DualLabeledCounterMetric {
 
 /// Combines a metric's base identifier and label
 pub fn combine_base_identifier_and_labels(
-    base_identifer: &str,
+    base_identifier: &str,
     key: &str,
     category: &str,
 ) -> String {
     format!(
         "{}{}",
-        base_identifer,
+        base_identifier,
         make_label_from_key_and_category(key, category)
     )
 }
@@ -302,6 +296,8 @@ pub fn validate_dynamic_key_and_or_category(
     base_identifier: &str,
     label: DynamicLabelType,
 ) -> String {
+    panic!("not validating dual labeled like this anymore");
+    /*
     // We should have exactly 3 elements when splitting by `RECORD_SEPARATOR`, since the label should begin with one and
     // then the key and category are separated by one. Split should contain an empty string, the key, and the category.
     // If we have more than 3 elements, then the consuming app must have used this character as part of a label and we
@@ -377,6 +373,56 @@ pub fn validate_dynamic_key_and_or_category(
         );
         combine_base_identifier_and_labels(base_identifier, OTHER_LABEL, OTHER_LABEL)
     }
+    */
+}
+
+pub fn validate_dual_label_sqlite(
+    tx: &mut Transaction,
+    base_identifier: &str,
+    key: &str,
+    category: &str,
+    send_in_pings: &[String],
+) -> Option<String> {
+    let existing_labels_sql = "SELECT DISTINCT labels FROM telemetry WHERE id = ?1";
+
+    let mut existing_keys = HashSet::new();
+    let mut existing_categories = HashSet::new();
+    {
+        let Ok(mut stmt) = tx.prepare(&existing_labels_sql) else {
+            // If we can't fetch from the database, assume the label is ok to use
+            todo!()
+        };
+
+        let Ok(mut rows) = stmt.query(params![base_identifier]) else {
+            // If we can't fetch from the database, assume the label is ok to use
+            todo!()
+        };
+
+        while let Ok(Some(row)) = rows.next() {
+            let existing_labels: String = row.get(0).unwrap();
+            let Some((existing_key, existing_category)) = existing_labels.split_once(RECORD_SEPARATOR) else { panic!("not a dual label") };
+
+            existing_keys.insert(existing_key.to_string());
+            existing_categories.insert(existing_category.to_string());
+        }
+    }
+
+    let mut new_key;
+    let mut new_category;
+
+    if existing_keys.contains(key) || existing_keys.len() < MAX_LABELS {
+        new_key = key;
+    } else {
+        new_key = OTHER_LABEL;
+    }
+
+    if existing_categories.contains(category) || existing_categories.len() < MAX_LABELS {
+        new_category = category
+    } else {
+        new_category = OTHER_LABEL;
+    }
+
+    return Some(format!("{new_key}{RECORD_SEPARATOR}{new_category}"));
 }
 
 fn label_is_valid(label: &str, glean: &Glean, meta: &CommonMetricDataInternal) -> bool {
