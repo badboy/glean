@@ -162,6 +162,8 @@ impl CommonMetricDataInternal {
     /// If `category` is empty, it's ommitted.
     /// Otherwise, it's the combination of the metric's `category` and `name`.
     pub(crate) fn base_identifier(&self) -> String {
+        assert!(!self.inner.name.contains('/'), "Labels should be added into `dynamic_label`, not slashed on");
+
         if self.inner.category.is_empty() {
             self.inner.name.clone()
         } else {
