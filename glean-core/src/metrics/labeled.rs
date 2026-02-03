@@ -10,10 +10,12 @@ use std::mem;
 use std::sync::{Arc, Mutex};
 
 use malloc_size_of::MallocSizeOf;
-use rusqlite::{Transaction, params};
+use rusqlite::{params, Transaction};
 
 use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
-use crate::error_recording::{ErrorType, record_error, record_error_sqlite, test_get_num_recorded_errors};
+use crate::error_recording::{
+    record_error, record_error_sqlite, test_get_num_recorded_errors, ErrorType,
+};
 use crate::histogram::HistogramType;
 use crate::metrics::{
     BooleanMetric, CounterMetric, CustomDistributionMetric, MemoryDistributionMetric, MemoryUnit,
@@ -458,12 +460,12 @@ pub fn validate_dynamic_label_sqlite(
     {
         let Ok(mut stmt) = tx.prepare(&existing_labels_sql) else {
             // If we can't fetch from the database, assume the label is ok to use
-            return Some(label.to_string())
+            return Some(label.to_string());
         };
 
         let Ok(mut rows) = stmt.query(params![base_identifier]) else {
             // If we can't fetch from the database, assume the label is ok to use
-            return Some(label.to_string())
+            return Some(label.to_string());
         };
 
         while let Ok(Some(row)) = rows.next() {
@@ -472,7 +474,7 @@ pub fn validate_dynamic_label_sqlite(
             label_count += 1;
             if existing_label == label {
                 label_already_used = true;
-                break
+                break;
             }
         }
     }
@@ -485,7 +487,14 @@ pub fn validate_dynamic_label_sqlite(
             label.len(),
             MAX_LABEL_LENGTH
         );
-        record_error_sqlite(tx, base_identifier, send_in_pings.to_vec(), ErrorType::InvalidLabel, msg, 1);
+        record_error_sqlite(
+            tx,
+            base_identifier,
+            send_in_pings.to_vec(),
+            ErrorType::InvalidLabel,
+            msg,
+            1,
+        );
         Some(String::from(OTHER_LABEL))
     } else {
         return Some(label.to_string());

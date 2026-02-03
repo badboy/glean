@@ -14,15 +14,15 @@
 
 use std::fmt::Display;
 
-use rusqlite::Transaction;
 use rusqlite::params;
+use rusqlite::Transaction;
 
-use crate::Glean;
-use crate::Lifetime;
 use crate::common_metric_data::CommonMetricDataInternal;
 use crate::error::{Error, ErrorKind};
 use crate::metrics::labeled::{combine_base_identifier_and_label, strip_label};
 use crate::metrics::{CounterMetric, Metric};
+use crate::Glean;
+use crate::Lifetime;
 use crate::{CommonMetricData, DynamicLabelType};
 
 /// The possible error types for metric recording.
@@ -194,12 +194,14 @@ pub fn record_error_sqlite(
     for ping in send_in_pings {
         let new_value = {
             let mut stmt = tx.prepare_cached(&value_sql).unwrap();
-            let mut rows = stmt.query(params![
-                full_id,
-                ping,
-                lifetime.as_str().to_string(),
-                metric_name
-            ]).unwrap();
+            let mut rows = stmt
+                .query(params![
+                    full_id,
+                    ping,
+                    lifetime.as_str().to_string(),
+                    metric_name
+                ])
+                .unwrap();
 
             if let Ok(Some(row)) = rows.next() {
                 let blob: Vec<u8> = row.get(0).unwrap();
@@ -214,7 +216,14 @@ pub fn record_error_sqlite(
             let mut stmt = tx.prepare_cached(insert_sql).unwrap();
             let encoded =
                 rmp_serde::to_vec(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-            stmt.execute(params![full_id, ping, lifetime.as_str(), metric_name, encoded]).unwrap();
+            stmt.execute(params![
+                full_id,
+                ping,
+                lifetime.as_str(),
+                metric_name,
+                encoded
+            ])
+            .unwrap();
         }
     }
 }

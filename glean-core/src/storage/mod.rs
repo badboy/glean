@@ -11,8 +11,8 @@ use std::collections::HashMap;
 use serde_json::{json, Value as JsonValue};
 
 use crate::coverage::record_coverage;
-use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
 use crate::database::sqlite::Database;
+use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
 use crate::metrics::Metric;
 use crate::Lifetime;
 
@@ -131,7 +131,13 @@ impl StorageManager {
                     snapshot_labeled_metrics(&mut snapshot, &metric_id, label, metric);
                 }
                 [label1, label2] => {
-                    snapshot_dual_labeled_metrics(&mut snapshot, &metric_id, label1, label2, metric);
+                    snapshot_dual_labeled_metrics(
+                        &mut snapshot,
+                        &metric_id,
+                        label1,
+                        label2,
+                        metric,
+                    );
                 }
                 _ => panic!("uh wat?"),
             }

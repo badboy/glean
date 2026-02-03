@@ -26,20 +26,20 @@ macro_rules! unwrap_or {
 use connection::Connection;
 use connection::ConnectionType;
 use malloc_size_of::MallocSizeOf;
-use rusqlite::OptionalExtension;
 use rusqlite::params;
 use rusqlite::types::FromSqlError;
+use rusqlite::OptionalExtension;
 use rusqlite::Transaction;
 use schema::Schema;
 use store::StorePath;
 
 use crate::common_metric_data::CommonMetricDataInternal;
+use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
+use crate::metrics::labeled::strip_label;
 use crate::metrics::Metric;
 use crate::Glean;
 use crate::Lifetime;
 use crate::Result;
-use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
-use crate::metrics::labeled::strip_label;
 
 mod connection;
 mod schema;
@@ -175,15 +175,23 @@ impl Database {
         self.conn
             .read(|conn| {
                 let mut stmt = conn.prepare_cached(&iter_sql).unwrap();
-                let rows = stmt.query_map(params![lifetime.as_str().to_string(), storage_name, metric_key], |row| {
-                    let id: String = row.get(0)?;
-                    let blob: Vec<u8> = row.get(1)?;
-                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
-                    Ok((id, blob))
-                }).unwrap();
+                let rows = stmt
+                    .query_map(
+                        params![lifetime.as_str().to_string(), storage_name, metric_key],
+                        |row| {
+                            let id: String = row.get(0)?;
+                            let blob: Vec<u8> = row.get(1)?;
+                            let blob: Metric = rmp_serde::from_slice(&blob)
+                                .map_err(|_| FromSqlError::InvalidType)?;
+                            Ok((id, blob))
+                        },
+                    )
+                    .unwrap();
 
                 for row in rows {
-                    let Ok((metric_id, metric)) = row else { continue };
+                    let Ok((metric_id, metric)) = row else {
+                        continue;
+                    };
                     transaction_fn(metric_id.as_bytes(), &metric);
                 }
 
@@ -208,12 +216,8 @@ impl Database {
     /// # Panics
     ///
     /// This function will **not** panic on database errors.
-    pub fn iter_store<F>(
-        &self,
-        lifetime: Lifetime,
-        storage_name: &str,
-        mut transaction_fn: F,
-    ) where
+    pub fn iter_store<F>(&self, lifetime: Lifetime, storage_name: &str, mut transaction_fn: F)
+    where
         F: FnMut(&[u8], &[&str], &Metric),
     {
         let iter_sql = r#"
@@ -230,16 +234,24 @@ impl Database {
         self.conn
             .read(|conn| {
                 let mut stmt = conn.prepare_cached(iter_sql).unwrap();
-                let rows = stmt.query_map(params![lifetime.as_str().to_string(), storage_name], |row| {
-                    let id: String = row.get(0)?;
-                    let blob: Vec<u8> = row.get(1)?;
-                    let labels: String = row.get(2)?;
-                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
-                    Ok((id, labels, blob))
-                }).unwrap();
+                let rows = stmt
+                    .query_map(
+                        params![lifetime.as_str().to_string(), storage_name],
+                        |row| {
+                            let id: String = row.get(0)?;
+                            let blob: Vec<u8> = row.get(1)?;
+                            let labels: String = row.get(2)?;
+                            let blob: Metric = rmp_serde::from_slice(&blob)
+                                .map_err(|_| FromSqlError::InvalidType)?;
+                            Ok((id, labels, blob))
+                        },
+                    )
+                    .unwrap();
 
                 for row in rows {
-                    let Ok((metric_id, labels, metric)) = row else { continue };
+                    let Ok((metric_id, labels, metric)) = row else {
+                        continue;
+                    };
                     let labels = labels.split(RECORD_SEPARATOR).collect::<Vec<_>>();
                     transaction_fn(metric_id.as_bytes(), &labels, &metric);
                 }
@@ -278,10 +290,13 @@ impl Database {
                 let mut stmt = tx.prepare_cached(get_metric_sql)?;
                 stmt.query_one([metric_identifier, storage_name, &labels], |row| {
                     let blob: Vec<u8> = row.get(0)?;
-                    let blob: Metric = rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
+                    let blob: Metric =
+                        rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
                     Ok(blob)
-                }).optional()
-            }).unwrap_or(None)
+                })
+                .optional()
+            })
+            .unwrap_or(None)
     }
 
     /// Determines if the storage has the given metric.
@@ -338,7 +353,14 @@ impl Database {
 
             for ping_name in data.storage_names() {
                 if glean.is_ping_enabled(ping_name) {
-                    if let Err(e) = self.record_per_lifetime(tx, data.inner.lifetime, ping_name, &name, &labels, value) {
+                    if let Err(e) = self.record_per_lifetime(
+                        tx,
+                        data.inner.lifetime,
+                        ping_name,
+                        &name,
+                        &labels,
+                        value,
+                    ) {
                         log::error!(
                             "Failed to record metric '{}' into {}: {:?}",
                             data.base_identifier(),
@@ -385,9 +407,14 @@ impl Database {
         "#;
 
         let mut stmt = tx.prepare_cached(insert_sql)?;
-        let encoded =
-            rmp_serde::to_vec(&metric).expect("IMPOSSIBLE: Serializing metric failed");
-        stmt.execute(params![key, storage_name, lifetime.as_str(), labels, encoded])?;
+        let encoded = rmp_serde::to_vec(&metric).expect("IMPOSSIBLE: Serializing metric failed");
+        stmt.execute(params![
+            key,
+            storage_name,
+            lifetime.as_str(),
+            labels,
+            encoded
+        ])?;
 
         Ok(())
     }
@@ -408,9 +435,14 @@ impl Database {
             }
             for ping_name in data.storage_names() {
                 if glean.is_ping_enabled(ping_name) {
-                    if let Err(e) =
-                        self.record_per_lifetime_with(tx, data.inner.lifetime, ping_name, &name, &labels, &mut transform)
-                    {
+                    if let Err(e) = self.record_per_lifetime_with(
+                        tx,
+                        data.inner.lifetime,
+                        ping_name,
+                        &name,
+                        &labels,
+                        &mut transform,
+                    ) {
                         log::error!(
                             "Failed to record metric '{}' into {}: {:?}",
                             data.base_identifier(),
@@ -462,8 +494,12 @@ impl Database {
 
         let new_value = {
             let mut stmt = tx.prepare_cached(&value_sql)?;
-            let mut rows =
-                stmt.query(params![key, storage_name, lifetime.as_str().to_string(), labels])?;
+            let mut rows = stmt.query(params![
+                key,
+                storage_name,
+                lifetime.as_str().to_string(),
+                labels
+            ])?;
 
             if let Ok(Some(row)) = rows.next() {
                 let blob: Vec<u8> = row.get(0)?;
@@ -489,7 +525,13 @@ impl Database {
             let mut stmt = tx.prepare_cached(insert_sql)?;
             let encoded =
                 rmp_serde::to_vec(&new_value).expect("IMPOSSIBLE: Serializing metric failed");
-            stmt.execute(params![key, storage_name, lifetime.as_str(), labels, encoded])?;
+            stmt.execute(params![
+                key,
+                storage_name,
+                lifetime.as_str(),
+                labels,
+                encoded
+            ])?;
         }
 
         Ok(())
@@ -586,8 +628,13 @@ impl Database {
     ///
     /// * This function will **not** panic on database errors.
     pub fn clear_all(&self) {
-        let lifetimes = &[Lifetime::User.as_str(), Lifetime::Ping.as_str(), Lifetime::Application.as_str()];
-        let clear_sql = "DELETE FROM telemetry WHERE lifetime = ?1 OR lifetime = ?2 OR lifetime = ?3";
+        let lifetimes = &[
+            Lifetime::User.as_str(),
+            Lifetime::Ping.as_str(),
+            Lifetime::Application.as_str(),
+        ];
+        let clear_sql =
+            "DELETE FROM telemetry WHERE lifetime = ?1 OR lifetime = ?2 OR lifetime = ?3";
         _ = self.conn.write(|tx| {
             let mut stmt = tx.prepare_cached(clear_sql)?;
             let res = stmt.execute(lifetimes);

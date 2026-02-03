@@ -9,9 +9,11 @@ use malloc_size_of_derive::MallocSizeOf;
 use rusqlite::Transaction;
 
 use crate::error::{Error, ErrorKind};
-use crate::metrics::dual_labeled_counter::{validate_dynamic_key_and_or_category, validate_dual_label_sqlite};
-use crate::metrics::labeled::{validate_dynamic_label, validate_dynamic_label_sqlite};
 use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
+use crate::metrics::dual_labeled_counter::{
+    validate_dual_label_sqlite, validate_dynamic_key_and_or_category,
+};
+use crate::metrics::labeled::{validate_dynamic_label, validate_dynamic_label_sqlite};
 use crate::Glean;
 use serde::{Deserialize, Serialize};
 
@@ -149,7 +151,10 @@ impl CommonMetricDataInternal {
     /// If `category` is empty, it's ommitted.
     /// Otherwise, it's the combination of the metric's `category` and `name`.
     pub(crate) fn base_identifier(&self) -> String {
-        assert!(!self.inner.name.contains('/'), "Labels should be added into `dynamic_label`, not slashed on");
+        assert!(
+            !self.inner.name.contains('/'),
+            "Labels should be added into `dynamic_label`, not slashed on"
+        );
 
         if self.inner.category.is_empty() {
             self.inner.name.clone()
@@ -167,23 +172,36 @@ impl CommonMetricDataInternal {
 
         if let Some(label) = &self.inner.dynamic_label {
             match label {
-                DynamicLabelType::Static(label) => {
-                    Some(label.to_string())
-                }
-                DynamicLabelType::Label(label) => {
-                    validate_dynamic_label_sqlite(tx, &base_identifier, label, &self.inner.send_in_pings)
-                }
-                DynamicLabelType::KeyOnly(key, static_category) => {
-                    validate_dual_label_sqlite(tx, &base_identifier, key, "", &self.inner.send_in_pings)
-                        .map(|key| format!("{key}{static_category}"))
-                },
-                DynamicLabelType::CategoryOnly(static_key, category) => {
-                    validate_dual_label_sqlite(tx, &base_identifier, "", category, &self.inner.send_in_pings)
-                        .map(|category| format!("{static_key}{category}"))
-                },
-                DynamicLabelType::KeyAndCategory(key, category) => {
-                    validate_dual_label_sqlite(tx, &base_identifier, key, category, &self.inner.send_in_pings)
-                },
+                DynamicLabelType::Static(label) => Some(label.to_string()),
+                DynamicLabelType::Label(label) => validate_dynamic_label_sqlite(
+                    tx,
+                    &base_identifier,
+                    label,
+                    &self.inner.send_in_pings,
+                ),
+                DynamicLabelType::KeyOnly(key, static_category) => validate_dual_label_sqlite(
+                    tx,
+                    &base_identifier,
+                    key,
+                    "",
+                    &self.inner.send_in_pings,
+                )
+                .map(|key| format!("{key}{static_category}")),
+                DynamicLabelType::CategoryOnly(static_key, category) => validate_dual_label_sqlite(
+                    tx,
+                    &base_identifier,
+                    "",
+                    category,
+                    &self.inner.send_in_pings,
+                )
+                .map(|category| format!("{static_key}{category}")),
+                DynamicLabelType::KeyAndCategory(key, category) => validate_dual_label_sqlite(
+                    tx,
+                    &base_identifier,
+                    key,
+                    category,
+                    &self.inner.send_in_pings,
+                ),
             }
         } else {
             // A static label has been checked on `.get()` and is part of the name (`category.name/label`).
