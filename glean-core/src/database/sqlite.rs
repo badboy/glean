@@ -174,7 +174,7 @@ impl Database {
 
         self.conn
             .read(|conn| {
-                let mut stmt = conn.prepare_cached(&iter_sql).unwrap();
+                let mut stmt = conn.prepare_cached(iter_sql).unwrap();
                 let rows = stmt
                     .query_map(
                         params![lifetime.as_str().to_string(), storage_name, metric_key],
@@ -357,7 +357,7 @@ impl Database {
                         tx,
                         data.inner.lifetime,
                         ping_name,
-                        &name,
+                        name,
                         &labels,
                         value,
                     ) {
@@ -439,7 +439,7 @@ impl Database {
                         tx,
                         data.inner.lifetime,
                         ping_name,
-                        &name,
+                        name,
                         &labels,
                         &mut transform,
                     ) {
@@ -493,7 +493,7 @@ impl Database {
         "#;
 
         let new_value = {
-            let mut stmt = tx.prepare_cached(&value_sql)?;
+            let mut stmt = tx.prepare_cached(value_sql)?;
             let mut rows = stmt.query(params![
                 key,
                 storage_name,

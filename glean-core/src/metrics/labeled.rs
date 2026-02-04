@@ -386,7 +386,7 @@ pub fn validate_dynamic_label_sqlite(
     let mut label_already_used = false;
     let mut label_count = 0;
     {
-        let Ok(mut stmt) = tx.prepare(&existing_labels_sql) else {
+        let Ok(mut stmt) = tx.prepare(existing_labels_sql) else {
             // If we can't fetch from the database, assume the label is ok to use
             return Some(label.to_string());
         };
@@ -425,6 +425,6 @@ pub fn validate_dynamic_label_sqlite(
         );
         Some(String::from(OTHER_LABEL))
     } else {
-        return Some(label.to_string());
+        Some(label.to_string())
     }
 }

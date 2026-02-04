@@ -191,7 +191,7 @@ pub fn record_error_sqlite(
 
     for ping in send_in_pings {
         let new_value = {
-            let mut stmt = tx.prepare_cached(&value_sql).unwrap();
+            let mut stmt = tx.prepare_cached(value_sql).unwrap();
             let mut rows = stmt
                 .query(params![
                     full_id,

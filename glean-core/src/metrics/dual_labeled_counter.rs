@@ -280,7 +280,7 @@ pub fn validate_dual_label_sqlite(
     let mut existing_keys = HashSet::new();
     let mut existing_categories = HashSet::new();
     {
-        let Ok(mut stmt) = tx.prepare(&existing_labels_sql) else {
+        let Ok(mut stmt) = tx.prepare(existing_labels_sql) else {
             // If we can't fetch from the database, assume the label is ok to use
             todo!()
         };
@@ -303,22 +303,19 @@ pub fn validate_dual_label_sqlite(
         }
     }
 
-    let new_key;
-    let new_category;
-
-    if existing_keys.contains(key) || existing_keys.len() < MAX_LABELS {
-        new_key = label_is_valid_sqlite(key, tx, base_identifier, send_in_pings);
+    let new_key = if existing_keys.contains(key) || existing_keys.len() < MAX_LABELS {
+        label_is_valid_sqlite(key, tx, base_identifier, send_in_pings)
     } else {
-        new_key = OTHER_LABEL;
-    }
+        OTHER_LABEL
+    };
 
-    if existing_categories.contains(category) || existing_categories.len() < MAX_LABELS {
-        new_category = label_is_valid_sqlite(category, tx, base_identifier, send_in_pings);
+    let new_category = if existing_categories.contains(category) || existing_categories.len() < MAX_LABELS {
+        label_is_valid_sqlite(category, tx, base_identifier, send_in_pings)
     } else {
-        new_category = OTHER_LABEL;
-    }
+        OTHER_LABEL
+    };
 
-    return Some(format!("{new_key}{RECORD_SEPARATOR}{new_category}"));
+    Some(format!("{new_key}{RECORD_SEPARATOR}{new_category}"))
 }
 
 fn label_is_valid_sqlite<'a>(
@@ -352,7 +349,7 @@ fn label_is_valid_sqlite<'a>(
             msg,
             1,
         );
-        return OTHER_LABEL;
+        OTHER_LABEL
     } else {
         label
     }
