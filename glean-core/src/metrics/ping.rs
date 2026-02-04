@@ -345,7 +345,7 @@ impl PingType {
                 // that is the only way to know *if* it will be submitted). The
                 // implication of this is that the count for a metrics ping will
                 // be included in the *next* metrics ping.
-                if true || BUILTIN_PINGS.contains(&ping.name) {
+                if BUILTIN_PINGS.contains(&ping.name) {
                     glean
                         .additional_metrics
                         .pings_submitted
