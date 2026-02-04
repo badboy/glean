@@ -117,20 +117,8 @@ fn main() {
     _ = &*glean_metrics::usage_reporting;
     glean::initialize(cfg, client_info);
 
-    glean_metrics::test_metrics::sample_counter.add(2);
-    glean_metrics::test_metrics::sample_url.set("data:application/json");
-    glean_metrics::test_metrics::sample_labeled_counter
-        .get("test")
-        .add(1);
-    glean_metrics::test_metrics::sample_labeled_string
-        .get("test")
-        .set(String::from("foo"));
-    assert_eq!(
-        Some(2),
-        glean_metrics::test_metrics::sample_counter.test_get_value(None)
-    );
+    glean_metrics::test_metrics::sample_boolean.set(true);
 
-    /*
     use glean_metrics::party::{BalloonsObject, BalloonsObjectItem};
     let balloons = BalloonsObject::from([
         BalloonsObjectItem {
@@ -261,13 +249,12 @@ fn main() {
     glean_metrics::prototype.submit(None);
     glean_metrics::usage_reporting.submit(None);
 
-    //glean::set_upload_enabled(false);
-    //glean_metrics::usage_reporting.set_enabled(true);
-    //glean_metrics::test_metrics::sample_boolean.set(true);
-    //_ = glean_metrics::test_metrics::sample_boolean.test_get_value(None);
-    //glean_metrics::prototype.submit(None);
-    //glean_metrics::usage_reporting.submit(None);
-    */
+    glean::set_upload_enabled(false);
+    glean_metrics::usage_reporting.set_enabled(true);
+    glean_metrics::test_metrics::sample_boolean.set(true);
+    _ = glean_metrics::test_metrics::sample_boolean.test_get_value(None);
+    glean_metrics::prototype.submit(None);
+    glean_metrics::usage_reporting.submit(None);
 
     // Need to wait a short time for Glean to actually act.
     thread::sleep(Duration::from_millis(100));
