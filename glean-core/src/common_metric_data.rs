@@ -8,9 +8,7 @@ use malloc_size_of_derive::MallocSizeOf;
 use rusqlite::Transaction;
 
 use crate::error::{Error, ErrorKind};
-use crate::metrics::dual_labeled_counter::{
-    validate_dual_label_sqlite,
-};
+use crate::metrics::dual_labeled_counter::validate_dual_label_sqlite;
 use crate::metrics::labeled::validate_dynamic_label_sqlite;
 use serde::{Deserialize, Serialize};
 

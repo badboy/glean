@@ -11,9 +11,7 @@ use std::sync::{Arc, Mutex};
 use rusqlite::{params, Transaction};
 
 use crate::common_metric_data::{CommonMetricData, CommonMetricDataInternal, DynamicLabelType};
-use crate::error_recording::{
-    record_error_sqlite, test_get_num_recorded_errors, ErrorType,
-};
+use crate::error_recording::{record_error_sqlite, test_get_num_recorded_errors, ErrorType};
 use crate::metrics::{CounterMetric, MetricType};
 use crate::TestGetValue;
 

@@ -12,14 +12,11 @@ use malloc_size_of::MallocSizeOf;
 use rusqlite::{params, Transaction};
 
 use crate::common_metric_data::{CommonMetricData, DynamicLabelType};
-use crate::error_recording::{
-    record_error_sqlite, test_get_num_recorded_errors, ErrorType,
-};
+use crate::error_recording::{record_error_sqlite, test_get_num_recorded_errors, ErrorType};
 use crate::histogram::HistogramType;
 use crate::metrics::{
     BooleanMetric, CounterMetric, CustomDistributionMetric, MemoryDistributionMetric, MemoryUnit,
-    MetricType, QuantityMetric, StringMetric, TestGetValue, TimeUnit,
-    TimingDistributionMetric,
+    MetricType, QuantityMetric, StringMetric, TestGetValue, TimeUnit, TimingDistributionMetric,
 };
 
 const MAX_LABELS: usize = 16;

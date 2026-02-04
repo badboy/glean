@@ -7,6 +7,7 @@ use crate::common::*;
 
 use std::collections::HashMap;
 
+use glean_core::metrics::*;
 use glean_core::CommonMetricData;
 use glean_core::LabeledMetricData;
 use glean_core::Lifetime;
