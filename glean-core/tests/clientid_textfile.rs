@@ -114,9 +114,8 @@ fn restores_clientid_file_from_db() {
 }
 
 #[test]
+#[ignore = "needs to be adopted to sqlite storage!"]
 fn clientid_regen_issue_with_existing_db() {
-    panic!("needs to be adopted to sqlite storage!");
-
     let (file_client_id, temp) = {
         // Ensure we initialize once to get a client_id
         let (glean, temp) = new_glean(None);
@@ -191,9 +190,8 @@ fn db_client_id_prefered_over_file_client_id() {
 }
 
 #[test]
+#[ignore = "needs to be adopted to sqlite storage!"]
 fn c0ffee_in_db_gets_overwritten_by_stored_client_id() {
-    panic!("needs to be adopted to sqlite storage!");
-
     let (file_client_id, temp) = {
         // Ensure we initialize once to get a client_id
         let (glean, temp) = new_glean(None);

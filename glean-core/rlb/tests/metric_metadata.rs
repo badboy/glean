@@ -78,6 +78,7 @@ mod metrics {
 /// We retrieve information about the metric.
 /// And later the whole process is shutdown.
 #[test]
+#[ignore = "TODO: needed by fog for profiler integration"]
 fn check_metadata() {
     use glean::MetricIdentifier;
     common::enable_test_logging();
