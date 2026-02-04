@@ -6,6 +6,7 @@
 //!
 //! This module is inspired by, and borrows concepts from, the
 //! Application Services `sql-support` crate.
+#![allow(dead_code)]
 
 use std::{borrow::Cow, fmt::Debug, num::NonZeroU32, path::Path, sync::Mutex};
 

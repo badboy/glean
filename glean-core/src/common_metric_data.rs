@@ -9,10 +9,9 @@ use rusqlite::Transaction;
 
 use crate::error::{Error, ErrorKind};
 use crate::metrics::dual_labeled_counter::{
-    validate_dual_label_sqlite, validate_dynamic_key_and_or_category,
+    validate_dual_label_sqlite,
 };
-use crate::metrics::labeled::{validate_dynamic_label, validate_dynamic_label_sqlite};
-use crate::Glean;
+use crate::metrics::labeled::validate_dynamic_label_sqlite;
 use serde::{Deserialize, Serialize};
 
 /// The supported metrics' lifetimes.
@@ -206,30 +205,6 @@ impl CommonMetricDataInternal {
             // TODO: Store the label in its own property for easier access without string
             // manipulation.
             base_identifier.split_once("/").map(|s| s.1.to_string())
-        }
-    }
-
-    /// The metric's unique identifier, including the category, name and label.
-    ///
-    /// If `category` is empty, it's ommitted.
-    /// Otherwise, it's the combination of the metric's `category`, `name` and `label`.
-    pub(crate) fn identifier(&self, glean: &Glean) -> String {
-        let base_identifier = self.base_identifier();
-
-        if let Some(label) = &self.inner.dynamic_label {
-            match label {
-                DynamicLabelType::Label(label) => {
-                    validate_dynamic_label(glean, self, &base_identifier, label)
-                }
-                _ => validate_dynamic_key_and_or_category(
-                    glean,
-                    self,
-                    &base_identifier,
-                    label.clone(),
-                ),
-            }
-        } else {
-            base_identifier
         }
     }
 

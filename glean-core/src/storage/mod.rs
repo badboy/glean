@@ -10,7 +10,6 @@ use std::collections::HashMap;
 
 use serde_json::{json, Value as JsonValue};
 
-use crate::coverage::record_coverage;
 use crate::database::sqlite::Database;
 use crate::metrics::Metric;
 use crate::Lifetime;
@@ -175,7 +174,7 @@ impl StorageManager {
     /// # Returns
     ///
     /// The decoded metric or `None` if no data is found.
-    pub fn snapshot_metric(
+    pub fn _snapshot_metric(
         &self,
         storage: &Database,
         store_name: &str,
@@ -194,31 +193,6 @@ impl StorageManager {
         storage.iter_store(metric_lifetime, store_name, &mut snapshotter);
 
         snapshot
-    }
-
-    /// Gets the current value of a single metric identified by name.
-    ///
-    /// Use this API, rather than `snapshot_metric` within the testing API, so
-    /// that the usage will be reported in coverage, if enabled.
-    ///
-    /// # Arguments
-    ///
-    /// * `storage` - The database to get data from.
-    /// * `store_name` - The store name to look into.
-    /// * `metric_id` - The full metric identifier.
-    ///
-    /// # Returns
-    ///
-    /// The decoded metric or `None` if no data is found.
-    pub fn snapshot_metric_for_test(
-        &self,
-        storage: &Database,
-        store_name: &str,
-        metric_id: &str,
-        metric_lifetime: Lifetime,
-    ) -> Option<Metric> {
-        record_coverage(metric_id);
-        self.snapshot_metric(storage, store_name, metric_id, metric_lifetime)
     }
 
     ///  Snapshots the experiments.

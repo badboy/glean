@@ -15,7 +15,7 @@ use crate::error_recording::{
     record_error_sqlite, test_get_num_recorded_errors, ErrorType,
 };
 use crate::metrics::{CounterMetric, MetricType};
-use crate::{Glean, TestGetValue};
+use crate::TestGetValue;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
@@ -252,28 +252,6 @@ impl TestGetValue for DualLabeledCounterMetric {
         }
         Some(out)
     }
-}
-
-/// Validates a dynamic label, changing it to `OTHER_LABEL` if it's invalid.
-///
-/// Checks the requested label against limitations, such as the label length and allowed
-/// characters.
-///
-/// # Arguments
-///
-/// * `label` - The requested label
-///
-/// # Returns
-///
-/// The entire identifier for the metric, including the base identifier and the corrected label.
-/// The errors are logged.
-pub fn validate_dynamic_key_and_or_category(
-    _glean: &Glean,
-    _meta: &CommonMetricDataInternal,
-    _base_identifier: &str,
-    _label: DynamicLabelType,
-) -> String {
-    panic!("not validating dual labeled like this anymore");
 }
 
 pub fn validate_dual_label_sqlite(
