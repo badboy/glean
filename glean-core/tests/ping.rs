@@ -7,7 +7,6 @@ use crate::common::*;
 
 use std::collections::HashMap;
 
-use glean_core::metrics::*;
 use glean_core::CommonMetricData;
 use glean_core::LabeledMetricData;
 use glean_core::Lifetime;
@@ -124,7 +123,19 @@ fn empty_pings_with_flag_are_sent() {
 
 #[test]
 fn test_pings_submitted_metric() {
-    let (mut glean, _temp) = new_glean(None);
+    let (mut glean, temp) = new_glean(None);
+
+    let _guard = DropGuard::new(temp, |temp| {
+        if std::thread::panicking() {
+            let path = format!("{}/db/glean.sqlite", temp.path().display());
+            std::process::Command::new("sqlite3")
+                .arg(&path)
+                .arg("SELECT * FROM telemetry")
+                .stdout(std::io::stderr())
+                .status()
+                .unwrap();
+        }
+    });
 
     // Reconstructed here so we can test it without reaching into the library
     // internals.
@@ -321,4 +332,96 @@ fn database_write_timings_get_recorded() {
         0 < write_time["sum"].as_i64().unwrap(),
         "writing should take some time"
     );
+}
+
+// DROPGUARD
+
+use std::fmt::{self, Debug};
+use std::mem::ManuallyDrop;
+use std::ops::{Deref, DerefMut};
+
+pub struct DropGuard<T, F>
+where
+    F: FnOnce(T),
+{
+    inner: ManuallyDrop<T>,
+    f: ManuallyDrop<F>,
+}
+
+impl<T, F> DropGuard<T, F>
+where
+    F: FnOnce(T),
+{
+    #[must_use]
+    pub const fn new(inner: T, f: F) -> Self {
+        Self {
+            inner: ManuallyDrop::new(inner),
+            f: ManuallyDrop::new(f),
+        }
+    }
+
+    #[inline]
+    pub fn dismiss(self) -> T {
+        // First we ensure that dropping the guard will not trigger
+        // its destructor
+        let mut this = ManuallyDrop::new(self);
+
+        // Next we manually read the stored value from the guard.
+        //
+        // SAFETY: this is safe because we've taken ownership of the guard.
+        let value = unsafe { ManuallyDrop::take(&mut this.inner) };
+
+        // Finally we drop the stored closure. We do this *after* having read
+        // the value, so that even if the closure's `drop` function panics,
+        // unwinding still tries to drop the value.
+        //
+        // SAFETY: this is safe because we've taken ownership of the guard.
+        unsafe { ManuallyDrop::drop(&mut this.f) };
+        value
+    }
+}
+
+impl<T, F> Deref for DropGuard<T, F>
+where
+    F: FnOnce(T),
+{
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &*self.inner
+    }
+}
+
+impl<T, F> DerefMut for DropGuard<T, F>
+where
+    F: FnOnce(T),
+{
+    fn deref_mut(&mut self) -> &mut T {
+        &mut *self.inner
+    }
+}
+
+impl<T, F> Drop for DropGuard<T, F>
+where
+    F: FnOnce(T),
+{
+    fn drop(&mut self) {
+        // SAFETY: `DropGuard` is in the process of being dropped.
+        let inner = unsafe { ManuallyDrop::take(&mut self.inner) };
+
+        // SAFETY: `DropGuard` is in the process of being dropped.
+        let f = unsafe { ManuallyDrop::take(&mut self.f) };
+
+        f(inner);
+    }
+}
+
+impl<T, F> Debug for DropGuard<T, F>
+where
+    T: Debug,
+    F: FnOnce(T),
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Debug::fmt(&**self, f)
+    }
 }
