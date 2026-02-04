@@ -199,10 +199,7 @@ impl CommonMetricDataInternal {
                 ),
             }
         } else {
-            // A static label has been checked on `.get()` and is part of the name (`category.name/label`).
-            // TODO: Store the label in its own property for easier access without string
-            // manipulation.
-            base_identifier.split_once("/").map(|s| s.1.to_string())
+            None
         }
     }
 
