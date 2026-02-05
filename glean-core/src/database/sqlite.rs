@@ -390,13 +390,12 @@ impl Database {
     ) -> Result<()> {
         let insert_sql = r#"
         INSERT INTO
-            telemetry (id, ping, lifetime, labels, value, updated_at)
+            telemetry (id, ping, lifetime, labels, value)
         VALUES
-            (?1, ?2, ?3, ?4, ?5, DATETIME('now'))
+            (?1, ?2, ?3, ?4, ?5)
         ON CONFLICT(id, ping, labels) DO UPDATE SET
             lifetime = excluded.lifetime,
-            value = excluded.value,
-            updated_at = excluded.updated_at
+            value = excluded.value
         "#;
 
         let mut stmt = tx.prepare_cached(insert_sql)?;
@@ -503,13 +502,12 @@ impl Database {
 
         let insert_sql = r#"
                     INSERT INTO
-                        telemetry (id, ping, lifetime, labels, value, updated_at)
+                        telemetry (id, ping, lifetime, labels, value)
                     VALUES
-                        (?1, ?2, ?3, ?4, ?5, DATETIME('now'))
+                        (?1, ?2, ?3, ?4, ?5)
                     ON CONFLICT(id, ping, labels) DO UPDATE SET
                         lifetime = excluded.lifetime,
-                        value = excluded.value,
-                        updated_at = excluded.updated_at
+                        value = excluded.value
                     "#;
 
         {

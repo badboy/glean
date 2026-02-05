@@ -50,7 +50,6 @@ impl ConnectionOpener for Schema {
                lifetime TEXT NOT NULL,
                labels TEXT NOT NULL, -- can't be null or ON CONFLICT won't work
                value BLOB,
-               updated_at TEXT NOT NULL DEFAULT (DATETIME('now')),
                UNIQUE(id, ping, labels)
              );
 
