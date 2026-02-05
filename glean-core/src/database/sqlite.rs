@@ -280,7 +280,7 @@ impl Database {
         let metric_identifier = &data.base_identifier();
 
         self.conn
-            .write(|tx| {
+            .read(|tx| {
                 let labels = data.check_labels(tx);
 
                 let mut stmt = tx.prepare_cached(get_metric_sql)?;
