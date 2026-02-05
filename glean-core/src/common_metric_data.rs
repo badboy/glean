@@ -7,11 +7,11 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use malloc_size_of_derive::MallocSizeOf;
 use rusqlite::Transaction;
 
-use crate::ErrorType;
 use crate::error::{Error, ErrorKind};
 use crate::error_recording::record_error_sqlite;
 use crate::metrics::dual_labeled_counter::validate_dual_label_sqlite;
 use crate::metrics::labeled::validate_dynamic_label_sqlite;
+use crate::ErrorType;
 use serde::{Deserialize, Serialize};
 
 /// The supported metrics' lifetimes.

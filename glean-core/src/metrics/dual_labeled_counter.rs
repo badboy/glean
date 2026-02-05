@@ -8,14 +8,14 @@ use std::collections::{HashMap, HashSet};
 use std::mem;
 use std::sync::{Arc, Mutex};
 
-use rusqlite::{Transaction, params};
+use rusqlite::{params, Transaction};
 
-use crate::TestGetValue;
 use crate::common_metric_data::{
     CommonMetricData, CommonMetricDataInternal, DynamicLabelType, LabelCheck,
 };
-use crate::error_recording::{ErrorType, test_get_num_recorded_errors};
+use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::metrics::{CounterMetric, MetricType};
+use crate::TestGetValue;
 
 const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
