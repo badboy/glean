@@ -187,7 +187,10 @@ pub fn record_error_sqlite(
             updated_at = excluded.updated_at
     "#;
 
-    for ping in send_in_pings.iter().chain(need_metrics.then_some(&ping_name)) {
+    for ping in send_in_pings
+        .iter()
+        .chain(need_metrics.then_some(&ping_name))
+    {
         let new_value = {
             let mut stmt = tx.prepare_cached(value_sql).unwrap();
             let mut rows = stmt

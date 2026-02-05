@@ -7,7 +7,9 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use malloc_size_of_derive::MallocSizeOf;
 use rusqlite::Transaction;
 
+use crate::ErrorType;
 use crate::error::{Error, ErrorKind};
+use crate::error_recording::record_error_sqlite;
 use crate::metrics::dual_labeled_counter::validate_dual_label_sqlite;
 use crate::metrics::labeled::validate_dynamic_label_sqlite;
 use serde::{Deserialize, Serialize};
@@ -123,6 +125,52 @@ impl From<CommonMetricData> for CommonMetricDataInternal {
     }
 }
 
+pub enum LabelCheck {
+    NoLabel,
+    Label(String),
+    Error(String, i32),
+}
+
+impl LabelCheck {
+    pub fn label(&self) -> &str {
+        use LabelCheck::*;
+        match self {
+            NoLabel => "",
+            Label(label) | Error(label, _) => label,
+        }
+    }
+
+    pub fn record_error(&self, tx: &mut Transaction, metric_name: &str, send_in_pings: &[String]) {
+        use LabelCheck::*;
+
+        let num_errors = match self {
+            NoLabel => return,
+            Label(_) => return,
+            Error(_, count) => *count,
+        };
+
+        record_error_sqlite(
+            tx,
+            metric_name,
+            send_in_pings,
+            ErrorType::InvalidLabel,
+            "",
+            num_errors,
+        );
+    }
+
+    fn map(self, mut f: impl FnMut(String) -> String) -> Self {
+        use LabelCheck::*;
+
+        match self {
+            NoLabel => NoLabel,
+            Label(s) => Label(f(s)),
+            // shoud use `MAX_LABEL_LENGTH`, but we can't const-format this
+            Error(s, cnt) => Error(f(s), cnt),
+        }
+    }
+}
+
 impl CommonMetricDataInternal {
     /// Creates a new metadata object.
     pub fn new<A: Into<String>, B: Into<String>, C: Into<String>>(
@@ -162,44 +210,29 @@ impl CommonMetricDataInternal {
     ///
     /// If `category` is empty, it's ommitted.
     /// Otherwise, it's the combination of the metric's `category`, `name` and `label`.
-    pub(crate) fn check_labels(&self, tx: &mut Transaction<'_>) -> Option<String> {
+    pub(crate) fn check_labels(&self, tx: &Transaction<'_>) -> LabelCheck {
         let base_identifier = self.base_identifier();
 
         if let Some(label) = &self.inner.dynamic_label {
             match label {
-                DynamicLabelType::Static(label) => Some(label.to_string()),
-                DynamicLabelType::Label(label) => validate_dynamic_label_sqlite(
-                    tx,
-                    &base_identifier,
-                    label,
-                    &self.inner.send_in_pings,
-                ),
-                DynamicLabelType::KeyOnly(key, static_category) => validate_dual_label_sqlite(
-                    tx,
-                    &base_identifier,
-                    key,
-                    "",
-                    &self.inner.send_in_pings,
-                )
-                .map(|key| format!("{key}{static_category}")),
-                DynamicLabelType::CategoryOnly(static_key, category) => validate_dual_label_sqlite(
-                    tx,
-                    &base_identifier,
-                    "",
-                    category,
-                    &self.inner.send_in_pings,
-                )
-                .map(|category| format!("{static_key}{category}")),
-                DynamicLabelType::KeyAndCategory(key, category) => validate_dual_label_sqlite(
-                    tx,
-                    &base_identifier,
-                    key,
-                    category,
-                    &self.inner.send_in_pings,
-                ),
+                DynamicLabelType::Static(label) => LabelCheck::Label(label.to_string()),
+                DynamicLabelType::Label(label) => {
+                    validate_dynamic_label_sqlite(tx, &base_identifier, label)
+                }
+                DynamicLabelType::KeyOnly(key, static_category) => {
+                    validate_dual_label_sqlite(tx, &base_identifier, key, "")
+                        .map(|key| format!("{key}{static_category}"))
+                }
+                DynamicLabelType::CategoryOnly(static_key, category) => {
+                    validate_dual_label_sqlite(tx, &base_identifier, "", category)
+                        .map(|category| format!("{static_key}{category}"))
+                }
+                DynamicLabelType::KeyAndCategory(key, category) => {
+                    validate_dual_label_sqlite(tx, &base_identifier, key, category)
+                }
             }
         } else {
-            None
+            LabelCheck::NoLabel
         }
     }
 

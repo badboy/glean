@@ -282,13 +282,10 @@ impl Database {
 
         self.conn
             .write(|tx| {
-                let mut labels = String::from("");
-                if let Some(checked_labels) = data.check_labels(tx) {
-                    labels = checked_labels;
-                }
+                let labels = data.check_labels(tx);
 
                 let mut stmt = tx.prepare_cached(get_metric_sql)?;
-                stmt.query_one([metric_identifier, storage_name, &labels], |row| {
+                stmt.query_one([metric_identifier, storage_name, labels.label()], |row| {
                     let blob: Vec<u8> = row.get(0)?;
                     let blob: Metric =
                         rmp_serde::from_slice(&blob).map_err(|_| FromSqlError::InvalidType)?;
@@ -346,10 +343,8 @@ impl Database {
         let name = strip_label(&base_identifier);
 
         _ = self.conn.write(|tx| {
-            let mut labels = String::from("");
-            if let Some(checked_labels) = data.check_labels(tx) {
-                labels = checked_labels;
-            }
+            let labels = data.check_labels(tx);
+            labels.record_error(tx, name, data.storage_names());
 
             for ping_name in data.storage_names() {
                 if glean.is_ping_enabled(ping_name) {
@@ -358,7 +353,7 @@ impl Database {
                         data.inner.lifetime,
                         ping_name,
                         name,
-                        &labels,
+                        labels.label(),
                         value,
                     ) {
                         log::error!(
@@ -429,10 +424,9 @@ impl Database {
         let name = strip_label(&base_identifier);
 
         _ = self.conn.write(|tx| {
-            let mut labels = String::from("");
-            if let Some(checked_labels) = data.check_labels(tx) {
-                labels = checked_labels;
-            }
+            let labels = data.check_labels(tx);
+            labels.record_error(tx, name, data.storage_names());
+
             for ping_name in data.storage_names() {
                 if glean.is_ping_enabled(ping_name) {
                     if let Err(e) = self.record_per_lifetime_with(
@@ -440,7 +434,7 @@ impl Database {
                         data.inner.lifetime,
                         ping_name,
                         name,
-                        &labels,
+                        labels.label(),
                         &mut transform,
                     ) {
                         log::error!(
