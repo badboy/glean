@@ -154,7 +154,6 @@ impl LabelCheck {
             metric_name,
             send_in_pings,
             ErrorType::InvalidLabel,
-            "",
             num_errors,
         );
     }

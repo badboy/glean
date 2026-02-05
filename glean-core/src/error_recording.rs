@@ -149,10 +149,8 @@ pub fn record_error_sqlite(
     metric_name: &str,
     send_in_pings: &[String],
     error: ErrorType,
-    message: impl Display,
     num_errors: i32,
 ) {
-    log::warn!("{}: {}", metric_name, message);
     assert!(num_errors > 0);
 
     let ping_name = "metrics".to_string();
