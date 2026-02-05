@@ -147,7 +147,7 @@ pub fn record_error<O: Into<Option<i32>>>(
 pub fn record_error_sqlite(
     tx: &mut Transaction,
     metric_name: &str,
-    mut send_in_pings: Vec<String>,
+    send_in_pings: &[String],
     error: ErrorType,
     message: impl Display,
     num_errors: i32,
@@ -156,9 +156,7 @@ pub fn record_error_sqlite(
     assert!(num_errors > 0);
 
     let ping_name = "metrics".to_string();
-    if !send_in_pings.contains(&ping_name) {
-        send_in_pings.push(ping_name);
-    }
+    let need_metrics = !send_in_pings.contains(&ping_name);
 
     let full_id = format!("glean.error.{}", error.as_str());
     let lifetime = Lifetime::Ping;
@@ -189,7 +187,7 @@ pub fn record_error_sqlite(
             updated_at = excluded.updated_at
     "#;
 
-    for ping in send_in_pings {
+    for ping in send_in_pings.iter().chain(need_metrics.then_some(&ping_name)) {
         let new_value = {
             let mut stmt = tx.prepare_cached(value_sql).unwrap();
             let mut rows = stmt

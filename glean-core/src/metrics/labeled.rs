@@ -418,7 +418,7 @@ pub fn validate_dynamic_label_sqlite(
         record_error_sqlite(
             tx,
             base_identifier,
-            send_in_pings.to_vec(),
+            send_in_pings,
             ErrorType::InvalidLabel,
             msg,
             1,

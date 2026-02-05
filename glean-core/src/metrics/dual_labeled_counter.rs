@@ -269,7 +269,7 @@ pub fn validate_dual_label_sqlite(
         record_error_sqlite(
             tx,
             base_identifier,
-            send_in_pings.to_vec(),
+            send_in_pings,
             ErrorType::InvalidLabel,
             msg,
             1,
@@ -333,7 +333,7 @@ fn label_is_valid_sqlite<'a>(
         record_error_sqlite(
             tx,
             base_identifier,
-            send_in_pings.to_vec(),
+            send_in_pings,
             ErrorType::InvalidLabel,
             msg,
             1,
@@ -344,7 +344,7 @@ fn label_is_valid_sqlite<'a>(
         record_error_sqlite(
             tx,
             base_identifier,
-            send_in_pings.to_vec(),
+            send_in_pings,
             ErrorType::InvalidLabel,
             msg,
             1,
