@@ -2,6 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+use std::fmt::Display;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use malloc_size_of_derive::MallocSizeOf;
@@ -100,21 +101,20 @@ impl Default for DynamicLabelType {
     }
 }
 
-impl DynamicLabelType {
-    /// TODO
-    pub fn to_string(&self) -> String {
+impl Display for DynamicLabelType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
         match self {
-            DynamicLabelType::Static(label) => label.clone(),
-            DynamicLabelType::Label(label) => label.clone(),
+            DynamicLabelType::Static(label) => write!(f, "{label}"),
+            DynamicLabelType::Label(label) => write!(f, "{label}"),
             DynamicLabelType::KeyOnly(key, category) => {
-                format!("{key}{RECORD_SEPARATOR}{category}")
+                write!(f, "{key}{RECORD_SEPARATOR}{category}")
             }
             DynamicLabelType::CategoryOnly(key, category) => {
-                format!("{key}{RECORD_SEPARATOR}{category}")
+                write!(f, "{key}{RECORD_SEPARATOR}{category}")
             }
             DynamicLabelType::KeyAndCategory(key, category) => {
-                format!("{key}{RECORD_SEPARATOR}{category}")
+                write!(f, "{key}{RECORD_SEPARATOR}{category}")
             }
         }
     }

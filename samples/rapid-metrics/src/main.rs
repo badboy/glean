@@ -45,12 +45,10 @@ fn main() {
         optional path: PathBuf
     };
 
-    let data_path = if let Some(path) = flags.path {
-        PathBuf::from(path)
-    } else {
+    let data_path = flags.path.unwrap_or_else(||{
         let root = Builder::new().prefix("simple-db").tempdir().unwrap();
         root.path().to_path_buf()
-    };
+    });
 
     let maxn: usize = flags.maxn.unwrap_or(100);
     let seed: Option<u64> = flags.seed;
@@ -102,14 +100,9 @@ fn main() {
                     for i in 0..maxn {
                         let coin = rng.random_range(0..6);
 
-                        if timer_id.is_some() {
-                            if (i - timer_id_start) == 10 {
-                                log::info!("Got timer. Stopping timings after 10 rounds.");
-                                let Some(timer_id) = timer_id.take() else {
-                                    unreachable!()
-                                };
-                                glean_metrics::test_metrics::timings.stop_and_accumulate(timer_id);
-                            }
+                        if let Some(timer_id) = timer_id.take() && (i - timer_id_start) == 10 {
+                            log::info!("Got timer. Stopping timings after 10 rounds.");
+                            glean_metrics::test_metrics::timings.stop_and_accumulate(timer_id);
                         }
 
                         match coin {
