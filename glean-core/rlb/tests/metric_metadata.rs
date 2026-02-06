@@ -78,7 +78,6 @@ mod metrics {
 /// We retrieve information about the metric.
 /// And later the whole process is shutdown.
 #[test]
-#[ignore = "TODO: needed by fog for profiler integration"]
 fn check_metadata() {
     use glean::MetricIdentifier;
     common::enable_test_logging();
@@ -88,14 +87,14 @@ fn check_metadata() {
     let (category, name, label) = metrics::countit.get_identifiers();
     assert_eq!(category, "sesame");
     assert_eq!(name, "count_von_count");
-    assert_eq!(label, Some("ah_ah_ah"));
+    assert_eq!(label, Some("ah_ah_ah".to_string()));
 
     // Events and Objects have MetricIdentifier implemented explicitly, as
     // they wrap the glean-core Event and Object types
     let (category, name, label) = metrics::event.get_identifiers();
     assert_eq!(category, "shire");
     assert_eq!(name, "birthday");
-    assert_eq!(label, Some("111th"));
+    assert_eq!(label, Some("111th".to_string()));
 
     let (category, name, label) = metrics::object.get_identifiers();
     assert_eq!(category, "court");

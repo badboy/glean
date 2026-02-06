@@ -100,6 +100,26 @@ impl Default for DynamicLabelType {
     }
 }
 
+impl DynamicLabelType {
+    /// TODO
+    pub fn to_string(&self) -> String {
+        use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
+        match self {
+            DynamicLabelType::Static(label) => label.clone(),
+            DynamicLabelType::Label(label) => label.clone(),
+            DynamicLabelType::KeyOnly(key, category) => {
+                format!("{key}{RECORD_SEPARATOR}{category}")
+            }
+            DynamicLabelType::CategoryOnly(key, category) => {
+                format!("{key}{RECORD_SEPARATOR}{category}")
+            }
+            DynamicLabelType::KeyAndCategory(key, category) => {
+                format!("{key}{RECORD_SEPARATOR}{category}")
+            }
+        }
+    }
+}
+
 #[derive(Default, Debug, MallocSizeOf)]
 pub struct CommonMetricDataInternal {
     pub inner: CommonMetricData,
