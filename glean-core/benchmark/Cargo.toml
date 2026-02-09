@@ -13,7 +13,7 @@ rust-version = "1.87"
 
 [dependencies]
 glean-core = { path = "../", features = ["benchmark"] }
-criterion = { version = "0.8.0", features = ["html_reports"] }
+criterion = { version = "4.3.0", package = "codspeed-criterion-compat" }
 tempfile = "3.8.0"
 gungraun = { version = "0.17.0", features = ["cachegrind"], optional = true }
 
