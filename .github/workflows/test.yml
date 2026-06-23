@@ -34,7 +34,7 @@ jobs:
         name: Set up Rust
         uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
         with:
-          toolchain: {{ matrix.rust_version }}
+          toolchain: ${{ matrix.rust_version }}
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
 
@@ -92,7 +92,7 @@ jobs:
         id: setup_python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          python-version: {{ matrix.os }}
+          python-version: ${{ matrix.os }}
 
       - name: Python tests
         run: |
