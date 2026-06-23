@@ -163,10 +163,11 @@ jobs:
 
       - name: List docs
         run: |
-          set -x
-          ls -lh
-          ls -lh docs
           tree docs
+
+      - name: Check internal documentation links
+        run: |
+          make linkcheck-raw
 
   test-swift:
     runs-on: macos-latest
