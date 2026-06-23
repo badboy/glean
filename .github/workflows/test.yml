@@ -16,6 +16,10 @@ env:
   PYTHON_VERSION: '3.14'
   MSRV: '1.90'
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-rust:
     runs-on: ubuntu-latest
