@@ -159,11 +159,11 @@ jobs:
         with:
           pattern: generated-*-docs
           merge-multiple: true
-          path: docs/
+          path: build/docs
 
       - name: List docs
         run: |
-          tree docs
+          tree build
 
       - name: Check internal documentation links
         run: |
