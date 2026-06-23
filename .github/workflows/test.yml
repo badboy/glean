@@ -158,10 +158,10 @@ jobs:
           ls -lh docs
           tree docs
 
-    test-swift:
-      runs-on: macos-latest
-      steps:
-        - *checkout
+  test-swift:
+    runs-on: macos-latest
+    steps:
+      - *checkout
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
