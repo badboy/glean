@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MSRV: "1.90"
+
 jobs:
   lint-yaml:
     runs-on: ubuntu-latest
@@ -78,3 +81,55 @@ jobs:
             echo "===================================="
             exit 1
           fi
+
+  lint-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: "${{ env.MSRV }}"
+          components: clippy
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - run: cargo clippy --version
+
+      - name: Clippy
+        run: make lint-rust
+
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: "stable"
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+      - name: Lint Python
+        run: make lint-python
+
+  fmt-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: "${{ env.MSRV }}"
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - run: rustfmt --version
+
+      - name: cargo fmt
+        run: cargo fmt -- --check
