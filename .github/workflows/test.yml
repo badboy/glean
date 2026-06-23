@@ -189,6 +189,7 @@ jobs:
       - name: Install jazzy
         run: |
           gem install --no-document jazzy
+          gem install --no-document xcpretty
 
       - name: Setup build environment
         run: |
