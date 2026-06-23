@@ -1,0 +1,80 @@
+name: Lint
+
+on:
+  push:
+    # branches:
+      # - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+# Drop all default GITHUB_TOKEN permissions; each job declares its own least-privilege set.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+      - name: Install yamllint
+        run: |
+          uv tool install yamllint
+
+      - name: Lint YAML
+        run: |
+          make lint-yaml
+
+  lint-licenses:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+        with:
+          cache-bin: true
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --version 0.19.9
+
+      - name: Run license check
+        run: cargo deny check licenses
+
+      - name: Run dependency ban check
+        run: cargo deny check bans
+
+  lint-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Check vendored schema for upstream updates
+        run: |
+          bin/update-schema.sh HEAD
+          if ! git diff --exit-code HEAD -- glean-core/preview/tests/glean.1.schema.json; then
+            echo "===================================="
+            echo "Latest schema from upstream changed."
+            echo "Please regenerate the file using:"
+            echo "    bin/update-schema.sh latest"
+            echo "Commit the modified files and push."
+            echo "===================================="
+            exit 1
+          fi
