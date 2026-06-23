@@ -45,11 +45,29 @@ jobs:
       - name: Test
         run: make test-rust
 
+  test-rust-minimum:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: ${{ env.MSRV }}
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - *install-deps
+
+      - name: Test
+        run: make test-rust
+
   docs-rust:
     runs-on: ubuntu-latest
     steps:
       - *checkout
       - *setup-rust
+
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
         with:
           cache-bin: true
@@ -74,41 +92,14 @@ jobs:
           name: generated-rust-docs
           path: docs/
 
-  test-rust-minimum:
-    runs-on: ubuntu-latest
-    steps:
-      - &checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          persist-credentials: false
-          filter: blob:none
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - *setup-rust
-        with:
-          toolchain: ${{ env.MSRV }}
-
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
-
-      - *install-deps
-
-      - name: Test
-        run: make test-rust
-
   test-python-3.9:
     runs-on: ubuntu-latest
     steps:
-      - &checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          persist-credentials: false
-          filter: blob:none
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - *checkout
 
       - *setup-rust
 
-      - &setup-python
-        name: Set up Python
+      - name: Set up Python
         id: setup_python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
@@ -120,28 +111,20 @@ jobs:
           export PYTHON_ARGS=-v
           make test-python
 
-
   test-python-3.10:
     runs-on: ubuntu-latest
     steps:
-      - &checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          persist-credentials: false
-          filter: blob:none
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - *checkout
 
       - *setup-rust
 
-      - &setup-python
+      - name: Set up Python
+        id: setup_python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.10"
 
-      - &test-python
-        name: Python tests
-        run: |
-          export PYTHON_ARGS=-v
-          make test-python
+      - *test-python
 
   docs-python:
     runs-on: ubuntu-latest
@@ -149,7 +132,10 @@ jobs:
     steps:
       - *checkout
       - *setup-rust
-      - *setup-python
+
+      - name: Set up Python
+        id: setup_python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.10"
 
@@ -169,6 +155,7 @@ jobs:
       - docs-python
     steps:
       - *checkout
+
       - name: Install linkchecker
         run: |
           npm install link-checker
