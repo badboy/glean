@@ -168,6 +168,10 @@ jobs:
           ndk-version: "r29"
           link-to-sdk: true
 
+      - name: Restrict to Linux builds only
+        run: |
+            echo "rust.targets=linux-x86-64" > local.properties
+
       - name: Gradle lint
         run: |
           ./gradlew --no-daemon lint ktlint detekt
