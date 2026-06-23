@@ -1,16 +1,42 @@
-name: test
+name: Build, Test, and Deploy
 
 on:
   push:
+    # branches:
+      # - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+# Drop all default GITHUB_TOKEN permissions; each job declares its own least-privilege set.
+permissions: {}
+
+env:
+  PYTHON_VERSION: '3.14'
+  MSRV: '1.90'
 
 jobs:
-  build:
+  test-rust-stable:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Install deps
+      - &checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - &setup-rust
+        name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - &install-deps
+        name: Install deps
         run: |
             sudo apt update
             sudo apt install --yes --no-install-recommends \
@@ -18,3 +44,142 @@ jobs:
 
       - name: Test
         run: make test-rust
+
+  docs-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+      - *setup-rust
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+        with:
+          cache-bin: true
+
+      - name: Version information
+        run: |
+          rustc --version
+          cargo --version
+          rustup --version
+
+      - name: Install mdbook-dtmo
+        run: |
+          cargo install mdbook-dtmo --version 0.15.2
+          cp ~/.cargo/bin/mdbook-dtmo ~/.cargo/bin/mdbook
+
+      - name: Build Rust documentation
+        run: |
+          bin/build-rust-docs.sh
+
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: generated-rust-docs
+          path: docs/
+
+  test-rust-minimum:
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - *setup-rust
+        with:
+          toolchain: ${{ env.MSRV }}
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - *install-deps
+
+      - name: Test
+        run: make test-rust
+
+  test-python-3.9:
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - *setup-rust
+
+      - &setup-python
+        name: Set up Python
+        id: setup_python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.9"
+
+      - &test-python
+        name: Python tests
+        run: |
+          export PYTHON_ARGS=-v
+          make test-python
+
+
+  test-python-3.10:
+    runs-on: ubuntu-latest
+    steps:
+      - &checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - *setup-rust
+
+      - &setup-python
+        with:
+          python-version: "3.10"
+
+      - &test-python
+        name: Python tests
+        run: |
+          export PYTHON_ARGS=-v
+          make test-python
+
+  docs-python:
+    runs-on: ubuntu-latest
+    needs: [test-python-3.10]
+    steps:
+      - *checkout
+      - *setup-rust
+      - *setup-python
+        with:
+          python-version: "3.10"
+
+      - name: Generate Python docs
+        command: |
+          make docs-python
+
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: generated-python-docs
+          path: docs/python
+
+  docs-linkcheck:
+    runs-on: ubuntu-latest
+    needs:
+      - docs-rust
+      - docs-python
+    steps:
+      - *checkout
+      - name: Install linkchecker
+        run: |
+          npm install link-checker
+
+      - uses: actions/download-artifact/commit/3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        name: generated-*-docs
+        merge-multiple: true
+
+      - name: List docs
+        run: |
+          set -x
+          ls -lh
+          ls -lh docs
+          tree docs
