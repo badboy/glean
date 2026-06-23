@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rust_version: ["stable", "1.90"]
+        rust-version: ["stable", "1.90"]
     steps:
       - &checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -33,7 +33,7 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
         with:
-          toolchain: ${{ matrix.rust_version }}
+          toolchain: ${{ matrix.rust-version }}
 
       - uses: taiki-e/install-action@9e1e5806d4a4822de933115878265be9aaa786d9 # v2.82.2
         with:
@@ -102,7 +102,7 @@ jobs:
         id: setup_python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
-          python-version: ${{ matrix.os }}
+          python-version: ${{ matrix.python-version }}
 
       - name: Python tests
         run: |
