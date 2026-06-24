@@ -202,6 +202,7 @@ jobs:
           python3 -m venv venv
           .\venv\Scripts\pip install --upgrade wheel setuptools
           .\venv\Scripts\pip install -r glean-core\python\requirements_dev.txt
+          .\venv\Scripts\pip install -e .
 
           .\venv\Scripts\py.test -v glean-core\python\tests
 
