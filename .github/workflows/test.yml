@@ -155,10 +155,10 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           python3 -m venv venv
-          venv/bin/pip install --upgrade pip wheel setuptools
-          venv/bin/pip install -r glean-core/python/requirements_dev.txt
+          .\venv\bin\pip install --upgrade pip wheel setuptools
+          .\venv\bin\pip install -r glean-core\python\requirements_dev.txt
 
-          venv/bin/py.test -v glean-core/python/tests
+          .\venv\bin\py.test -v glean-core\python\tests
 
   test-python-windows:
     runs-on: windows-latest
