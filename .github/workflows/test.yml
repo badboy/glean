@@ -165,6 +165,9 @@ jobs:
         run: |
           tree build
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Check internal documentation links
         run: |
           make linkcheck-raw
