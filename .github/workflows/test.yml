@@ -143,8 +143,7 @@ jobs:
 
       - name: Python tests
         run: |
-          export PYTHON_ARGS=-v
-          make test-python
+          make test-python PYTEST_ARGS=-v
 
   test-python-windows:
     runs-on: windows-latest
