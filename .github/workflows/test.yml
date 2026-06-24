@@ -54,6 +54,19 @@ jobs:
       - name: Test
         run: make test-rust
 
+  spelling:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Install aspell
+        run: |
+          sudo apt update
+          sudo apt install aspell aspell-en
+
+      - name: Check documentation spelling
+        run: bin/spellcheck.sh list
+
   docs:
     runs-on: ubuntu-latest
     steps:
