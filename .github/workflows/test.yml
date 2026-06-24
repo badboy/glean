@@ -151,7 +151,7 @@ jobs:
         run: |
           make test-python
 
-      - name: Python tests
+      - name: "Python tests (Windows)"
         if: runner.os == 'Windows'
         run: |
           python3 -m venv venv
