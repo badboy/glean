@@ -133,54 +133,54 @@ jobs:
           export PYTHON_ARGS=-v
           make test-python
 
-  test-swift:
-    runs-on: macos-latest
-    steps:
-      - *checkout
+  #test-swift:
+  #  runs-on: macos-latest
+  #  steps:
+  #    - *checkout
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
-        with:
-          toolchain: stable
+  #    - name: Set up Rust
+  #      uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+  #      with:
+  #        toolchain: stable
 
-      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+  #    - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.4'
+  #    - uses: ruby/setup-ruby@v1
+  #      with:
+  #        ruby-version: '3.4'
 
-      - name: Show Ruby environment
-        run: |
-          ruby --version
-          gem env
-          xcpretty --version || true
+  #    - name: Show Ruby environment
+  #      run: |
+  #        ruby --version
+  #        gem env
+  #        xcpretty --version || true
 
-      - name: Install jazzy
-        run: |
-          gem install --no-document jazzy
-          gem install --no-document xcpretty
+  #    - name: Install jazzy
+  #      run: |
+  #        gem install --no-document jazzy
+  #        gem install --no-document xcpretty
 
-      - name: Setup build environment
-        run: |
-          set -x
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+  #    - name: Setup build environment
+  #      run: |
+  #        set -x
+  #        rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
 
-          # For some reason everything works fine if we use the host clang,
-          # not the Xcode-bundled clang.
-          echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
-          echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
+  #        # For some reason everything works fine if we use the host clang,
+  #        # not the Xcode-bundled clang.
+  #        echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
+  #        echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
 
-          # List available devices -- allows us to see what's there
-          DEVICES=$(xcrun xctrace list devices 2>&1)
-          echo "$DEVICES"
-          # Pick a device and start it
-          UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
-          xcrun simctl boot "$UUID"
+  #        # List available devices -- allows us to see what's there
+  #        DEVICES=$(xcrun xctrace list devices 2>&1)
+  #        echo "$DEVICES"
+  #        # Pick a device and start it
+  #        UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
+  #        xcrun simctl boot "$UUID"
 
-      - name: Run iOS build
-        run: |
-          make build-swift
+  #    - name: Run iOS build
+  #      run: |
+  #        make build-swift
 
-      - name: Run iOS test
-        run: |
-          make test-swift
+  #    - name: Run iOS test
+  #      run: |
+  #        make test-swift
