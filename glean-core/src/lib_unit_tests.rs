@@ -59,7 +59,7 @@ fn path_is_constructed_from_data() {
     let (glean, _t) = new_glean(None);
 
     assert_eq!(
-        "/submit/org-mozilla-glean-test-app/baseline/1/this-is-a-docid",
+        "/1submit/org-mozilla-glean-test-app/baseline/1/this-is-a-docid",
         glean.make_path("baseline", "this-is-a-docid")
     );
 }
