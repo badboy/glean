@@ -86,7 +86,7 @@ class GleanTest {
 
         var request = server.takeRequest(20L, TimeUnit.SECONDS)!!
         var docType = request.path!!.split("/")[3]
-        assertEquals("baseline1", docType)
+        assertEquals("baseline", docType)
     }
 
     @Test
