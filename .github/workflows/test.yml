@@ -309,3 +309,18 @@ jobs:
           export GRADLE_OPTS="-Xmx2048m"
           export TARGET_CFLAGS="-DNDEBUG"
           ./gradlew :glean-sample-app:assembleAndroidTest
+
+      - name: Save test results
+        if: failure()
+        run: |
+            mkdir -p test-results/junit/
+            mkdir -p test-results/tests/
+            cp -a glean-core/android/build/reports/tests test-results/
+            find glean-core/android/build -type f -regex ".*/build/test-results/.*xml" -exec cp {} test-results/junit/ \;
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        with:
+          name: gradle-test-failures
+          path: test-results/tests
