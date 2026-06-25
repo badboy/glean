@@ -1,4 +1,4 @@
-name: Build, Test, and Deploy
+name: Test
 
 on:
   push:
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   decide-runs:
-    name: Decide what checks to run based on changed files
+    name: Decision task
     runs-on: ubuntu-latest
     permissions:
       contents: read
