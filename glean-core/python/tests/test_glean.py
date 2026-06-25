@@ -294,7 +294,7 @@ def test_the_app_channel_must_be_correctly_set():
 
 def test_get_language_tag_reports_the_tag_for_the_default_locale():
     tag = _util.get_locale_tag()
-    assert re.match("(und)|([a-z][a-z]-[A-Z][A-Z])", tag)
+    assert re.match("(und)|([a-z][a-z]-[A-Z][A-Z])", tag), f"locale tag expected, got: {tag}"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="bug 1771157: Windows failures")
