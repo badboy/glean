@@ -2,8 +2,9 @@ name: Build, Test, and Deploy
 
 on:
   push:
-    # branches:
-      # - main
+    branches:
+      - main
+      - ci-gha-rust-test-only/swnzlmupmmru
   pull_request:
     types:
       - opened
