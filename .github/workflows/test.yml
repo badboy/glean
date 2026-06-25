@@ -264,3 +264,48 @@ jobs:
   #    - name: Run iOS test
   #      run: |
   #        make test-swift
+
+  test-kotlin:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+
+      - uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: "r29"
+          link-to-sdk: true
+
+      - name: Restrict to Linux builds only
+        run: |
+            echo "rust.targets=linux-x86-64" > local.properties
+
+      - name: Test
+        run: |
+          export GRADLE_OPTS="-Xmx2048m"
+          export TARGET_CFLAGS="-DNDEBUG"
+          ./gradlew --no-daemon lint ktlint detekt
+
+      - name: Build Android Sample App
+        run: |
+          export GRADLE_OPTS="-Xmx2048m"
+          export TARGET_CFLAGS="-DNDEBUG"
+          ./gradlew :glean-sample-app:assembleAndroidTest
