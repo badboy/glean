@@ -261,17 +261,3 @@ jobs:
 
       - name: cargo fmt
         run: cargo fmt -- --check
-
-  done:
-    runs-on: ubuntu-latest
-    needs:
-      - lint-yaml
-      - lint-licenses
-      - lint-schema
-      - lint-rust
-      - lint-python
-      - lint-internal-metrics
-      - lint-kotlin
-    steps:
-      - name: Done
-        run: echo done
