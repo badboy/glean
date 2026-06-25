@@ -26,6 +26,9 @@ def get_locale_tag() -> str:
     if value is None:
         return "und"
 
+    if value == "C":
+        return "und"
+
     # The format of the locale string is platform depedent. At least on Linux,
     # often an understore is used between language and country, which is not
     # RFC 1766 compliant. Correct it here.
