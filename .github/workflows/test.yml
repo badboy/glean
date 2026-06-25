@@ -313,7 +313,7 @@ jobs:
         run: |
           export GRADLE_OPTS="-Xmx2048m"
           export TARGET_CFLAGS="-DNDEBUG"
-          ./gradlew --no-daemon lint ktlint detekt
+          ./gradlew --no-daemon :glean:testDebugUnitTest
 
       - name: Build Android Sample App
         run: |
