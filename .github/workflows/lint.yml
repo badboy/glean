@@ -20,6 +20,66 @@ env:
   MSRV: "1.90"
 
 jobs:
+  decide-runs:
+    name: Decision task
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      rust-changed: ${{ steps.set-flags.outputs.rust-changed }}
+      kotlin-changed: ${{ steps.set-flags.outputs.kotlin-changed }}
+      swift-changed: ${{ steps.set-flags.outputs.swift-changed }}
+      python-changed: ${{ steps.set-flags.outputs.python-changed }}
+    steps:
+      - &checkout-with-history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - id: changed-files-rust
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323  # v47.0.5
+        with:
+          files: |
+            **/Cargo.toml
+            **/Cargo.lock
+            **/*.rs
+          base_sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - id: changed-files-kotlin
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323  # v47.0.5
+        with:
+          files: |
+            **/*.kt
+            **/*.gradle
+            gradle-wrapper/**
+            **/*.groovy
+          base_sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - id: changed-files-swift
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323  # v47.0.5
+        with:
+          files: |
+            glean-core/ios/**
+          base_sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - id: changed-files-python
+        uses: tj-actions/changed-files@22103cc46bda19c2b464ffe86db46df6922fd323  # v47.0.5
+        with:
+          files: |
+            glean-core/**/*.py
+          base_sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - name: Decide which jobs to run
+        id: set-flags
+        env:
+          RUST_CHANGED: ${{ steps.changed-files-rust.outputs.any_changed }}
+          KOTLIN_CHANGED: ${{ steps.changed-files-kotlin.outputs.any_changed }}
+          SWIFT_CHANGED: ${{ steps.changed-files-swift.outputs.any_changed }}
+          PYTHON_CHANGED: ${{ steps.changed-files-python.outputs.any_changed }}
+        run: |
+          echo "rust-changed=$RUST_CHANGED" >> $GITHUB_OUTPUT
+          echo "kotlin-changed=$KOTLIN_CHANGED" >> $GITHUB_OUTPUT
+          echo "swift-changed=$SWIFT_CHANGED" >> $GITHUB_OUTPUT
+          echo "swift-changed=$PYTHON_CHANGED" >> $GITHUB_OUTPUT
+
   lint-yaml:
     runs-on: ubuntu-latest
     steps:
@@ -84,6 +144,8 @@ jobs:
 
   lint-rust:
     runs-on: ubuntu-latest
+    needs: [decide-runs]
+    if: needs.decide-runs.outputs.rust-changed == 'true'
     steps:
       - *checkout
 
@@ -102,6 +164,8 @@ jobs:
 
   lint-python:
     runs-on: ubuntu-latest
+    needs: [decide-runs]
+    if: needs.decide-runs.outputs.python-changed == 'true'
     steps:
       - *checkout
 
@@ -141,6 +205,8 @@ jobs:
 
   lint-kotlin:
     runs-on: ubuntu-latest
+    needs: [decide-runs]
+    if: needs.decide-runs.outputs.kotlin-changed == 'true'
     steps:
       - *checkout
 
@@ -178,6 +244,8 @@ jobs:
 
   fmt-rust:
     runs-on: ubuntu-latest
+    needs: [decide-runs]
+    if: needs.decide-runs.outputs.rust-changed == 'true'
     steps:
       - *checkout
 
