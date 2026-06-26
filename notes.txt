@@ -1,0 +1,57 @@
+https://github.com/badboy/glean/actions/runs/28181489373?pr=5
+
+## test
+
+decision task currently blocks:
+
+* spelling
+* docs
+* test-swift
+* test-rust
+
+test-swift always runs when *.swift files are touched
+it should be triggerable by /run-ios comments still, that means we need to put it into its own workflow to trigger it
+
+test-kotlin seems to work just fine
+
+## lint
+
+decision task currently blocks:
+
+* lint-rust
+* lint-python
+* lint-kotlin
+* fmt-rust
+
+always run (rather cheap right now):
+
+* lint-yaml
+ * should depend on yaml files
+* lint-licenses
+  * could depend on only Cargo.lock
+* lint-schema
+  * should be a cronjob and auto-PR
+* lint-internal-metrics
+  * should depend on metrics.yaml, pings.yaml and glean_parser
+
+
+## other notes
+
+* skipped tasks don't block PRs even if required!
+  * so that our decision task/run-on-demand works ok.
+* overwrite decision tasks somehow?
+  * with a comment in PR as we already do
+* properly use `uv` for everything instead of pip nonsense
+* we need to review the external actions used
+* better caching for
+  * android (sdk setup 24s, ndk setup 30s)
+  * gradle caching
+* can we annotate PRs with lint output?
+* can we expose gradle test failures (or other test failures!) better?
+
+## missing
+
+* [ ] pypi-linux-additional-releases
+* [ ] iOS integration tests
+* [ ] release tasks
+* [ ] split into PR vs main tasks
