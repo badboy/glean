@@ -78,6 +78,8 @@ jobs:
           RUN_STATUS: ${{ job.status }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -x
+
           STATE=error
           MSG="error"
 
@@ -90,10 +92,7 @@ jobs:
             MSG="The build failed"
           fi
 
-          pr_info=$(gh api "/repos/badboy/glean/pulls/${PR_NUMBER}")
-          status_url=$(echo "$pr_info" | jq -r ._links.statuses.href)
-
-          gh api "${status_url}" \
+          gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
             -f "state=${STATE}" \
             -f 'context=ci/swift' \
             -f "description=${MSG}"
