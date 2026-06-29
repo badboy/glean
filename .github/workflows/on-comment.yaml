@@ -7,12 +7,12 @@ on:
     types: [created]
 
 jobs:
-  approve-ios:
+  dispatch-swift:
     if: |
       github.event.issue.pull_request && startsWith(github.event.comment.body, '/run-ios')
     runs-on: ubuntu-latest
     steps:
-      - name: Run approval on comment
+      - name: Dispatch Swift tests
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           PR_NUMBER: ${{ github.event.issue.number }}
