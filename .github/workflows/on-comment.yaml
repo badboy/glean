@@ -39,3 +39,8 @@ jobs:
           WORKFLOW_URL=$(gh workflow run -R badboy/glean .github/workflows/test-swift.yml -f "pull-request=${PULL_REQUEST}")
 
           gh issue comment -R badboy/glean "${PR_NUMBER}" -b "iOS test run triggered: ${WORKFLOW_URL}"
+          gh api "/repos/badboy/glean/statuses/${PULL_REQUEST}" \
+            -f 'state=pending' \
+            -f "target_url=${WORKFLOW_URL}" \
+            -f 'context=ci/swift' \
+            -f 'description=Build started'

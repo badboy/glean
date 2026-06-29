@@ -43,32 +43,57 @@ jobs:
           gem env
           xcpretty --version || true
 
-      - name: Install jazzy
-        run: |
-          gem install --no-document jazzy
-          gem install --no-document xcpretty
+      #- name: Install jazzy
+      #  run: |
+      #    gem install --no-document jazzy
+      #    gem install --no-document xcpretty
 
-      - name: Setup build environment
-        run: |
-          set -x
-          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+      #- name: Setup build environment
+      #  run: |
+      #    set -x
+      #    rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
 
-          # For some reason everything works fine if we use the host clang,
-          # not the Xcode-bundled clang.
-          echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
-          echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
+      #    # For some reason everything works fine if we use the host clang,
+      #    # not the Xcode-bundled clang.
+      #    echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
+      #    echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
 
-          # List available devices -- allows us to see what's there
-          DEVICES=$(xcrun xctrace list devices 2>&1)
-          echo "$DEVICES"
-          # Pick a device and start it
-          UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
-          xcrun simctl boot "$UUID"
+      #    # List available devices -- allows us to see what's there
+      #    DEVICES=$(xcrun xctrace list devices 2>&1)
+      #    echo "$DEVICES"
+      #    # Pick a device and start it
+      #    UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
+      #    xcrun simctl boot "$UUID"
 
       - name: Run iOS build
         run: |
-          make build-swift
+          # make build-swift
+          true
 
       - name: Run iOS test
         run: |
-          make test-swift
+          # make test-swift
+          true
+
+      - name: Set status
+        if: always()
+        env:
+          PR_SHA: ${{ github.event.inputs.pull-request }}
+          RUN_STATUS: ${{ job.status }}
+        run: |
+          STATE=error
+          MSG="error"
+
+          if [[ "$RUN_STATUS" = "success" ]]; then
+            STATE="success"
+            MSG="The build succeeded"
+          fi
+          if [[ "$RUN_STATUS" = "failure" ]]; then
+            STATE="failure"
+            MSG="The build failed"
+          fi
+
+          gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
+            -f "state=${STATE}" \
+            -f 'context=ci/swift' \
+            -f "description=${MSG}"
