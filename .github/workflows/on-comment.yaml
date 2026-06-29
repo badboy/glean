@@ -11,9 +11,6 @@ jobs:
     if: |
       github.event.issue.pull_request && startsWith(github.event.comment.body, '/run-ios')
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-      checks: read
     steps:
       - name: Run approval on comment
         env:
