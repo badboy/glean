@@ -8,10 +8,6 @@ on:
         required: true
         type: string
 
-
-# Drop all default GITHUB_TOKEN permissions; each job declares its own least-privilege set.
-permissions: {}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -80,6 +76,7 @@ jobs:
         env:
           PR_SHA: ${{ github.event.inputs.pull-request }}
           RUN_STATUS: ${{ job.status }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           STATE=error
           MSG="error"
