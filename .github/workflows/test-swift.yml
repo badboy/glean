@@ -75,7 +75,7 @@ jobs:
           PR_SHA: ${{ github.event.inputs.pull-request }}
           RUN_STATUS: ${{ job.status }}
           GH_TOKEN: ${{ github.token }}
-          JOB_RUN_ID: ${{ github.job }}
+          JOB_RUN_ID: ${{ github.run_id }}
         run: |
           set -x
 
