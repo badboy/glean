@@ -64,7 +64,7 @@ jobs:
       - name: Run iOS build
         run: |
           # make build-swift
-          true
+          false
 
       - name: Run iOS test
         run: |
