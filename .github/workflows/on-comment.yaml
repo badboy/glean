@@ -39,4 +39,6 @@ jobs:
             exit 0
           fi
 
-          gh workflow run -R badboy/glean .github/workflows/test-swift.yml -f "$PULL_REQUEST"
+          gh workflow run -R badboy/glean .github/workflows/test-swift.yml -f "pull-request=${PULL_REQUEST}"
+
+          gh issue comment -R badboy/glean "${PR_NUMBER}" -b "iOS test run triggered"
