@@ -1,0 +1,41 @@
+name: On comment
+
+on:
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+
+jobs:
+  approve-ios:
+    if: |
+      github.event.issue.pull_request && startsWith(github.event.comment.body, '/run-ios')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      checks: read
+    steps:
+      - name: Run approval on comment
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          ACTOR: ${{ github.actor }}
+          PULL_REQUEST: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -x
+
+          permission=$(gh api /repos/badboy/glean/collaborators/${ACTOR}/permission | jq -r .permission)
+          if [[ "$permission" = "admin" ]]; then
+            true
+          else
+            echo "Insufficient permission. Stopping."
+            exit 0
+          fi
+
+          pr_info=$(gh api "/repos/badboy/glean/pulls/${PR_NUMBER}")
+          pr_state=$(echo "$pr_info" | jq -r .state)
+          if [[ "$pr_state" != "open" ]]; then
+            echo "PR is not open. State: ${pr_state}. Stopping."
+            exit 0
+          fi
+
+          gh workflow run -R badboy/glean .github/workflows/test-swift.yml -f "$PULL_REQUEST"
