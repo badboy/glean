@@ -1,0 +1,74 @@
+name: Test Swift
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull-request:
+        description: 'Trigger Swift tests for this pull request'
+        required: true
+        type: string
+
+
+# Drop all default GITHUB_TOKEN permissions; each job declares its own least-privilege set.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.inputs.pull-request }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+
+      - name: Show Ruby environment
+        run: |
+          ruby --version
+          gem env
+          xcpretty --version || true
+
+      - name: Install jazzy
+        run: |
+          gem install --no-document jazzy
+          gem install --no-document xcpretty
+
+      - name: Setup build environment
+        run: |
+          set -x
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+
+          # For some reason everything works fine if we use the host clang,
+          # not the Xcode-bundled clang.
+          echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
+          echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
+
+          # List available devices -- allows us to see what's there
+          DEVICES=$(xcrun xctrace list devices 2>&1)
+          echo "$DEVICES"
+          # Pick a device and start it
+          UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
+          xcrun simctl boot "$UUID"
+
+      - name: Run iOS build
+        run: |
+          make build-swift
+
+      - name: Run iOS test
+        run: |
+          make test-swift
