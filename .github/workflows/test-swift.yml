@@ -92,5 +92,5 @@ jobs:
 
           gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
             -f "state=${STATE}" \
-            -f 'context=ci/swift' \
+            -f 'context=ci/swift2' \
             -f "description=${MSG}"

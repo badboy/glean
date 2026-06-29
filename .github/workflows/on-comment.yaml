@@ -42,5 +42,5 @@ jobs:
           gh api "/repos/badboy/glean/statuses/${PULL_REQUEST}" \
             -f 'state=pending' \
             -f "target_url=${WORKFLOW_URL}" \
-            -f 'context=ci/swift' \
+            -f 'context=ci/swift2' \
             -f 'description=Build started'
