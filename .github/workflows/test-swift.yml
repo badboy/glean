@@ -77,6 +77,7 @@ jobs:
           PR_SHA: ${{ github.event.inputs.pull-request }}
           RUN_STATUS: ${{ job.status }}
           GH_TOKEN: ${{ github.token }}
+          JOB_RUN_ID: ${{ job.check_run_id }}
         run: |
           set -x
 
@@ -92,7 +93,10 @@ jobs:
             MSG="The build failed"
           fi
 
+          WORKFLOW_URL="https://github.com/badboy/glean/actions/runs/${JOB_RUN_ID}"
+
           gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
             -f "state=${STATE}" \
+            -f "target_url=${WORKFLOW_URL}" \
             -f 'context=ci/swift' \
             -f "description=${MSG}"
