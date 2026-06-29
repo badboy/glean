@@ -90,7 +90,10 @@ jobs:
             MSG="The build failed"
           fi
 
-          gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
+          pr_info=$(gh api "/repos/badboy/glean/pulls/${PR_NUMBER}")
+          status_url=$(echo "$pr_info" | jq -r ._links.statuses.href)
+
+          gh api "${status_url}" \
             -f "state=${STATE}" \
-            -f 'context=ci/swift2' \
+            -f 'context=ci/swift' \
             -f "description=${MSG}"
