@@ -212,7 +212,7 @@ jobs:
             glean-core/python/requirements_dev.txt
 
       - name: Python tests
-        if: matrix.os != 'Windows'
+        if: runner.os != 'Windows'
         run: |
           make test-python
 
