@@ -178,11 +178,21 @@ jobs:
           make linkcheck-raw
 
   test-python:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    steps: &python-test-steps
+        include:
+          - python-version: "3.9"
+            os: ubuntu-latest
+          - python-version: "3.10"
+            os: ubuntu-latest
+          - python-version: "3.11"
+            os: ubuntu-latest
+          - python-version: "3.12"
+            os: ubuntu-latest
+          - python-version: "3.9"
+            os: windows-latest
+    steps:
       - *checkout
 
       - name: Set up Rust
@@ -202,7 +212,7 @@ jobs:
             glean-core/python/requirements_dev.txt
 
       - name: Python tests
-        if: runner.os != 'Windows'
+        if: matrix.os != 'Windows'
         run: |
           make test-python
 
@@ -215,13 +225,6 @@ jobs:
           .\venv\Scripts\pip install -e .
 
           .\venv\Scripts\py.test -v glean-core\python\tests
-
-  test-python-windows:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ["3.9"]
-    steps: *python-test-steps
 
   test-swift:
     runs-on: macos-latest
