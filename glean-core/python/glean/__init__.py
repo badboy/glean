@@ -62,4 +62,3 @@ __all__ = [
 # Tell pdoc3 to ignore the libglean_ffi.so, which is a Rust shared library, not
 # a Python extension module.
 __pdoc__ = {"libglean_ffi": False}
-
