@@ -160,6 +160,16 @@ jobs:
 
           make test-rust
 
+  rust-done:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: test-rust
+    steps:
+      - run: |
+          [[ "$TEST_RUST_STATUS" = "success" ]]
+        env:
+          TEST_RUST_STATUS: ${{ needs.test-rust.status }}
+
   spelling:
     runs-on: ubuntu-latest
     needs: [decide-runs]
@@ -277,6 +287,16 @@ jobs:
           .\venv\Scripts\pip install -e .
 
           .\venv\Scripts\py.test -v glean-core\python\tests
+
+  python-done:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: test-python
+    steps:
+      - run: |
+          [[ "$TEST_PYTHON_STATUS" = "success" ]]
+        env:
+          TEST_PYTHON_STATUS: ${{ needs.test-python.status }}
 
   test-swift:
     runs-on: macos-latest
