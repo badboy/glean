@@ -166,9 +166,11 @@ jobs:
     needs: test-rust
     steps:
       - run: |
+          echo "$NEEDS_JSON"
           [[ "$TEST_RUST_STATUS" = "success" ]]
         env:
           TEST_RUST_STATUS: ${{ needs.test-rust.status }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
 
   spelling:
     runs-on: ubuntu-latest
