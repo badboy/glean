@@ -1,0 +1,40 @@
+name: Matrix
+on:
+  push:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  calculate_matrix:
+    name: Calculate job matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      jobs: ${{ steps.jobs.outputs.jobs }}
+    steps:
+      - name: Calculate the CI job matrix
+        run: |
+          echo 'jobs=[{"name":"aarch64-gnu","full_name":"auto - aarch64-gnu","os":"ubuntu-24.04","env":{"CACHES_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZI5DHEBFL","CARGO_UNSTABLE_BUILD_DIR_NEW_LAYOUT":true,"DEPLOY_BUCKET":"rust-lang-ci2","AWS_REGION":"us-west-1","TOOLSTATE_PUBLISH":1,"ARTIFACTS_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZN24CBO55"},"free_disk":true},{"name":"aarch64-gnu-debug","full_name":"auto - aarch64-gnu-debug","os":"ubuntu-24.04","env":{"ARTIFACTS_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZN24CBO55","DEPLOY_BUCKET":"rust-lang-ci2","AWS_REGION":"us-west-1","CACHES_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZI5DHEBFL","TOOLSTATE_PUBLISH":1,"CARGO_UNSTABLE_BUILD_DIR_NEW_LAYOUT":true},"free_disk":true},{"name":"arm-android","full_name":"auto - arm-android","os":"ubuntu-24.04","env":{"DEPLOY_BUCKET":"rust-lang-ci2","CARGO_UNSTABLE_BUILD_DIR_NEW_LAYOUT":true,"ARTIFACTS_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZN24CBO55","TOOLSTATE_PUBLISH":1,"AWS_REGION":"us-west-1","CACHES_AWS_ACCESS_KEY_ID":"AKIA46X5W6CZI5DHEBFL"},"free_disk":true}]' >> $GITHUB_OUTPUT
+        id: jobs
+  job:
+    name: ${{ matrix.full_name }}
+    needs: [ calculate_matrix ]
+    runs-on: "${{ matrix.os }}"
+    env:
+      JOB_JSON: ${{ toJson(matrix) }}
+    continue-on-error: ${{ matrix.continue_on_error || false }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON(needs.calculate_matrix.outputs.jobs) }}
+    steps:
+      - name: Info
+        run: |
+          echo "$JOB_JSON"
