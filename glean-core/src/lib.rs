@@ -9,7 +9,7 @@
 #![deny(missing_docs)]
 
 //! Glean is a modern approach for recording and sending Telemetry data.
-//!
+//! a
 //! It's in use at Mozilla.
 //!
 //! All documentation can be found online:
