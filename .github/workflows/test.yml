@@ -160,18 +160,6 @@ jobs:
 
           make test-rust
 
-  rust-done:
-    runs-on: ubuntu-latest
-    if: ${{ always() }}
-    needs: test-rust
-    steps:
-      - run: |
-          echo "$NEEDS_JSON"
-          [[ "$RESULT" = "success" ]] || [[ "$RESULT" = "skipped" ]]
-        env:
-          RESULT: ${{ needs.test-rust.result }}
-          NEEDS_JSON: ${{ toJSON(needs) }}
-
   spelling:
     runs-on: ubuntu-latest
     needs: [decide-runs]
@@ -289,18 +277,6 @@ jobs:
           .\venv\Scripts\pip install -e .
 
           .\venv\Scripts\py.test -v glean-core\python\tests
-
-  python-done:
-    runs-on: ubuntu-latest
-    if: ${{ always() }}
-    needs: test-python
-    steps:
-      - run: |
-          echo "$NEEDS_JSON"
-          [[ "$RESULT" = "success" ]] || [[ "$RESULT" = "skipped" ]]
-        env:
-          RESULT: ${{ needs.test-python.result }}
-          NEEDS_JSON: ${{ toJSON(needs) }}
 
   test-swift:
     runs-on: macos-latest
@@ -606,3 +582,33 @@ jobs:
 
       - name: cargo fmt
         run: cargo fmt -- --check
+
+  report-result:
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs:
+      - docs
+      - fmt-rust
+      - lint-internal-metrics
+      - lint-kotlin
+      - lint-licenses
+      - lint-python
+      - lint-rust
+      - lint-schema
+      - lint-yaml
+      - spelling
+      - test-kotlin
+      - test-python
+      - test-python
+      - test-rust
+      - test-swift
+    steps:
+      - name: Determine result
+        run: |
+          echo "$NEEDS_JSON"
+          echo "$RESULTS"
+          echo "$RESULTS" | grep -v failure
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          RESULTS: ${{ join(needs.*.result, ',') }}
+
