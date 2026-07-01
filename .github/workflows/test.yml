@@ -167,9 +167,9 @@ jobs:
     steps:
       - run: |
           echo "$NEEDS_JSON"
-          [[ "$TEST_RUST_STATUS" = "success" ]]
+          [[ "$RESULT" = "success" ]] || [[ "$RESULT" = "skipped" ]]
         env:
-          TEST_RUST_STATUS: ${{ needs.test-rust.status }}
+          RESULT: ${{ needs.test-rust.result }}
           NEEDS_JSON: ${{ toJSON(needs) }}
 
   spelling:
@@ -296,9 +296,11 @@ jobs:
     needs: test-python
     steps:
       - run: |
-          [[ "$TEST_PYTHON_STATUS" = "success" ]]
+          echo "$NEEDS_JSON"
+          [[ "$RESULT" = "success" ]] || [[ "$RESULT" = "skipped" ]]
         env:
-          TEST_PYTHON_STATUS: ${{ needs.test-python.status }}
+          RESULT: ${{ needs.test-python.result }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
 
   test-swift:
     runs-on: macos-latest
