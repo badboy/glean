@@ -813,3 +813,4 @@ open class GleanInternalAPI internal constructor() {
  * ```
  */
 object Glean : GleanInternalAPI()
+

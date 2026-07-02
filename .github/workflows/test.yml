@@ -397,10 +397,9 @@ jobs:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
 
-      - uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: "r29"
-          link-to-sdk: true
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;29.0.14206865"
 
       - name: Restrict to Linux builds only
         run: |
@@ -589,10 +588,9 @@ jobs:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
 
-      - uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: "r29"
-          link-to-sdk: true
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;29.0.14206865"
 
       - name: Restrict to Linux builds only
         run: |
