@@ -124,6 +124,7 @@ jobs:
     needs: [decide-runs]
     if: needs.decide-runs.outputs.rust-changed == 'true'
     strategy:
+      fail-fast: false
       matrix:
         rust-version: ["stable", "1.90"]
     steps:
@@ -232,6 +233,7 @@ jobs:
     needs: [decide-runs]
     if: needs.decide-runs.outputs.rust-changed == 'true' || needs.decide-runs.outputs.python-changed == 'true'
     strategy:
+      fail-fast: false
       matrix:
         include:
           - python-version: "3.9"
