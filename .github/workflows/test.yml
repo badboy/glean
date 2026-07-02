@@ -157,6 +157,7 @@ jobs:
           export RUST_LOG=glean_core=debug
           export CARGO_INCREMENTAL=0
 
+          echo "::add-matcher::.github/rust.json"
           make test-rust
 
   spelling:
@@ -517,7 +518,9 @@ jobs:
       - run: cargo clippy --version
 
       - name: Clippy
-        run: make lint-rust
+        run: |
+          echo "::add-matcher::.github/rust.json"
+          make lint-rust
 
   lint-python:
     runs-on: ubuntu-latest
@@ -619,7 +622,9 @@ jobs:
       - run: rustfmt --version
 
       - name: cargo fmt
-        run: cargo fmt -- --check
+        run: |
+          echo "::add-matcher::.github/rust.json"
+          cargo fmt -- --check
 
   report-result:
     runs-on: ubuntu-latest
