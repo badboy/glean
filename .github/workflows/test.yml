@@ -598,6 +598,7 @@ jobs:
 
       - name: Gradle lint
         run: |
+          echo "::add-matcher::.github/ktlint.json"
           ./gradlew --no-daemon lint ktlint detekt
 
   fmt-rust:
