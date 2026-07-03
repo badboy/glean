@@ -628,6 +628,12 @@ jobs:
           echo "::add-matcher::.github/rust.json"
           cargo fmt -- --check
 
+  code-security-analysis:
+    permissions:
+      contents: read
+      actions: read
+    uses: mozilla/ssdlc-actions/.github/workflows/code-security-analysis-private-repo.yml@ca8be48f3c06204fb16a3bd5ffa6d916782bbc76
+
   report-result:
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
@@ -648,6 +654,7 @@ jobs:
       - test-rust
       - test-swift
       - packaging-python-aarch64
+      - code-security-analysis
     steps:
       - name: Determine result
         run: |
