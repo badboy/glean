@@ -334,7 +334,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@d45b1a4e94b71acab930e56e79c6aa188764e7f9 # v1.316.0
         with:
           ruby-version: '3.4'
 
@@ -389,13 +389,13 @@ jobs:
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
@@ -582,13 +582,13 @@ jobs:
       - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520 # v5.4.0
         with:
           java-version: '17'
           distribution: 'temurin'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
         with:
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
@@ -633,7 +633,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    uses: mozilla/ssdlc-actions/.github/workflows/code-security-analysis-private-repo.yml@ca8be48f3c06204fb16a3bd5ffa6d916782bbc76
+    uses: mozilla/ssdlc-actions/.github/workflows/code-security-analysis-private-repo.yml@ca8be48f3c06204fb16a3bd5ffa6d916782bbc76 # v1
 
   report-result:
     runs-on: ubuntu-latest
