@@ -191,11 +191,11 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           pattern: dist-*
+          path: dist
 
       - name: List content
         run: |
           ls -R dist/ || true
-          ls -R target || true
 
       #- name: Publish package distributions to PyPI
       #  uses: pypa/gh-action-pypi-publish@release/v1
