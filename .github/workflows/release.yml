@@ -69,7 +69,7 @@ jobs:
         run: |
           make build-python-sdist
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-source
           path: target/wheels/
@@ -89,7 +89,7 @@ jobs:
         run: |
             make build-python-wheel
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-linux
           path: target/wheels/
@@ -118,7 +118,7 @@ jobs:
         run: |
             make build-python-wheel GLEAN_BUILD_TARGET=x86_64-apple-darwin
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-macos
           path: target/wheels/
@@ -140,7 +140,7 @@ jobs:
         run: |
             .\venv\Scripts\maturin build --release --target x86_64-pc-windows-gnu
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-windows
           path: target/wheels/
@@ -171,7 +171,7 @@ jobs:
             make build-python-wheel GLEAN_BUILD_TARGET="$target" GLEAN_BUILD_EXTRA="--zig"
           done
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: dist-aarch64
           path: target/wheels/
