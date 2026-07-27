@@ -6,25 +6,27 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+  issues: write
+
 jobs:
-  approve-ios:
+  dispatch-swift:
     if: |
       github.event.issue.pull_request && startsWith(github.event.comment.body, '/run-ios')
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-      checks: read
     steps:
-      - name: Run approval on comment
+      - name: Dispatch Swift tests
         env:
-          CIRCLE_TOKEN: ${{ secrets.CIRCLE_TOKEN }}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           PR_NUMBER: ${{ github.event.issue.number }}
           ACTOR: ${{ github.actor }}
         run: |
           set -x
 
-          permission=$(gh api /repos/mozilla/glean/collaborators/${ACTOR}/permission | jq -r .permission)
+          permission=$(gh api /repos/badboy/glean/collaborators/${ACTOR}/permission | jq -r .permission)
           if [[ "$permission" = "admin" ]]; then
             true
           else
@@ -32,35 +34,21 @@ jobs:
             exit 0
           fi
 
-          pr_info=$(gh api "/repos/mozilla/glean/pulls/${PR_NUMBER}")
+          pr_info=$(gh api "/repos/badboy/glean/pulls/${PR_NUMBER}")
           pr_state=$(echo "$pr_info" | jq -r .state)
           if [[ "$pr_state" != "open" ]]; then
             echo "PR is not open. State: ${pr_state}. Stopping."
             exit 0
           fi
 
-          statuses_url=$(echo "$pr_info" | jq -r .statuses_url)
-          curl --no-progress-meter --fail-with-body "${statuses_url}?per_page=100" > statuses.json
+          head_sha=$(echo "$pr_info" | jq -r .head.sha)
+          WORKFLOW_URL=$(gh workflow run -R badboy/glean .github/workflows/test-swift.yml -f "pull-request=${head_sha}")
 
-          workflow_url=$(<statuses.json jq '.[] | select(.state=="pending" and .context=="ci/circleci: iOS/hold") | .target_url' -r | uniq)
-          workflow_id=$(echo "$workflow_url" | cut -d'/' -f 5)
-          echo "Workflow ID: $workflow_id"
+          gh issue comment -R badboy/glean "${PR_NUMBER}" -b "iOS test run triggered: ${WORKFLOW_URL}"
 
-          if [[ -z "$workflow_id" ]]; then
-            echo "Error: workflow ID is missing. Stopping."
-            exit 0
-          fi
-
-          job_id=$(curl --no-progress-meter --fail-with-body --request GET \
-            --header "Circle-Token: $CIRCLE_TOKEN" \
-            "https://circleci.com/api/v2/workflow/$workflow_id/job" | jq -r '.items[] | select(.name=="hold" and .status=="on_hold") | .id')
-
-          if [[ -z "$job_id" ]]; then
-            echo "Error: job ID is missing. Stopping."
-            exit 0
-          fi
-
-          echo "Approving iOS/hold job. Job ID: $job_id"
-          curl --no-progress-meter --fail-with-body --request POST \
-            --header "Circle-Token: $CIRCLE_TOKEN" \
-            "https://circleci.com/api/v2/workflow/$workflow_id/approve/$job_id"
+          status_url=$(echo "$pr_info" | jq -r ._links.statuses.href)
+          gh api "${status_url}" \
+            -f 'state=pending' \
+            -f "target_url=${WORKFLOW_URL}" \
+            -f 'context=ci/swift' \
+            -f 'description=Build started'
