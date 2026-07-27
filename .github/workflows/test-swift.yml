@@ -1,0 +1,102 @@
+name: Test Swift
+
+on:
+  workflow_dispatch:
+    inputs:
+      pull-request:
+        description: 'Trigger Swift tests for this pull request'
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  test-swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          filter: blob:none
+          ref: ${{ github.event.inputs.pull-request }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: '3.4'
+
+      - name: Show Ruby environment
+        run: |
+          ruby --version
+          gem env
+          xcpretty --version || true
+
+      - name: Install jazzy
+        run: |
+          gem install --no-document jazzy
+          gem install --no-document xcpretty
+
+      - name: Setup build environment
+        run: |
+          set -x
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+
+          # For some reason everything works fine if we use the host clang,
+          # not the Xcode-bundled clang.
+          echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
+          echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
+
+          # List available devices -- allows us to see what's there
+          DEVICES=$(xcrun xctrace list devices 2>&1)
+          echo "$DEVICES"
+          # Pick a device and start it
+          UUID=$(echo "$DEVICES" | grep --max-count=1 'iPhone 17 Simulator (26' | awk -F'[()]' '{print $4}')
+          xcrun simctl boot "$UUID"
+
+      - name: Run iOS build
+        run: |
+          make build-swift
+
+      - name: Run iOS test
+        run: |
+          make test-swift
+
+      - name: Set status
+        if: always()
+        env:
+          PR_SHA: ${{ github.event.inputs.pull-request }}
+          RUN_STATUS: ${{ job.status }}
+          GH_TOKEN: ${{ github.token }}
+          JOB_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -x
+
+          STATE=error
+          MSG="error"
+
+          if [[ "$RUN_STATUS" = "success" ]]; then
+            STATE="success"
+            MSG="The build succeeded"
+          fi
+          if [[ "$RUN_STATUS" = "failure" ]]; then
+            STATE="failure"
+            MSG="The build failed"
+          fi
+
+          WORKFLOW_URL="https://github.com/badboy/glean/actions/runs/${JOB_RUN_ID}"
+
+          gh api "/repos/badboy/glean/statuses/${PR_SHA}" \
+            -f "state=${STATE}" \
+            -f "target_url=${WORKFLOW_URL}" \
+            -f 'context=ci/swift' \
+            -f "description=${MSG}"
