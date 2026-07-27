@@ -71,7 +71,7 @@ case "${cmd}-${target}" in
     jazzy --version
     jazzy \
       --clean \
-      --config "$WORKSPACE_ROOT/.circleci/jazzy.yml" \
+      --config "$WORKSPACE_ROOT/.github/jazzy.yml" \
       --output "$WORKSPACE_ROOT/build/docs/swift"
     ;;
   update-xcode-*)
