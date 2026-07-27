@@ -1,0 +1,298 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+# Drop all default GITHUB_TOKEN permissions; each job declares its own least-privilege set.
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-rust:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - &checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        id: auth
+      - name: Publish glean-core
+        run: |
+          cd glean-core
+          cargo publish --verbose
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Publish glean
+        run: |
+          cd glean-core/rlb
+          cargo publish --verbose
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Publish glean-sym
+        run: |
+          cd glean-core/glean-sym
+          cargo publish --verbose
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  package-python-source:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - &rust-setup
+        name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - &python-setup
+        name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+          cache-dependency-path: |
+            glean-core/python/requirements_dev.txt
+
+      - name: Setup Python
+        run: |
+          make setup-python
+
+      - name: Build Python source distribution
+        run: |
+          make build-python-sdist
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: dist-source
+          path: target/wheels/
+
+  package-python-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+      - *rust-setup
+      - *python-setup
+
+      - name: Setup Python env
+        run: |
+            make setup-python
+
+      - name: Build Python wheel
+        run: |
+            make build-python-wheel
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-linux
+          path: target/wheels/
+
+  package-python-macos:
+    runs-on: macos-latest
+    steps:
+      - *checkout
+      - *rust-setup
+      - *python-setup
+
+      - name: Install additional targets
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Setup Python env
+        run: |
+            make setup-python
+
+      - name: "Build Python wheel (aarch64)"
+        run: |
+            make build-python-wheel GLEAN_BUILD_TARGET=aarch64-apple-darwin
+
+      - name: "Build Python wheel (x86_64)"
+        run: |
+            make build-python-wheel GLEAN_BUILD_TARGET=x86_64-apple-darwin
+
+      - name: "Build Python wheel (universal2)"
+        run: |
+            make build-python-wheel GLEAN_BUILD_TARGET="universal2-apple-darwin"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-macos
+          path: target/wheels/
+
+  package-python-windows:
+    runs-on: windows-latest
+    steps:
+      - *checkout
+      - *rust-setup
+      - *python-setup
+
+      - name: Setup Python env
+        run: |
+          python3 -m venv venv
+          .\venv\Scripts\pip install --upgrade wheel setuptools
+          .\venv\Scripts\pip install -r glean-core\python\requirements_dev.txt
+
+      - name: Build Python wheel
+        run: |
+            .\venv\Scripts\maturin build --release --target x86_64-pc-windows-gnu
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-windows
+          path: target/wheels/
+
+  package-python-aarch64:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+      - *rust-setup
+      - *python-setup
+
+      - name: Setup Python env
+        run: |
+            make setup-python
+            .venv3.13/bin/pip install ziglang==0.15.2
+
+      - name: Install additional targets
+        run: |
+          rustup target add aarch64-unknown-linux-gnu
+          rustup target add aarch64-pc-windows-gnullvm
+
+      - name: Build Python packages
+        run: |
+          . .venv3.13/bin/activate
+
+          TARGETS="aarch64-unknown-linux-gnu aarch64-pc-windows-gnullvm"
+          for target in $TARGETS; do
+            make build-python-wheel GLEAN_BUILD_TARGET="$target" GLEAN_BUILD_EXTRA="--zig"
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist-aarch64
+          path: target/wheels/
+
+  publish-python:
+    runs-on: ubuntu-latest
+    needs:
+      - package-python-source
+      - package-python-linux
+      - package-python-macos
+      - package-python-windows
+      - package-python-aarch64
+    environment: release
+    permissions:
+      id-token: write
+      contents: write  # to modify the release
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: dist-*
+          path: dist
+          merge-multiple: true
+
+      - name: List content
+        run: |
+          ls -R dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Upload Python wheels to release
+        env:
+          VERSION_TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$VERSION_TAG" dist/*
+
+  publish-ios-framework:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # to modify the release
+    steps:
+      - *checkout
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4  # v2.9.1
+
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: '3.4'
+
+      - name: Show Ruby environment
+        run: |
+          ruby --version
+          gem env
+          xcpretty --version || true
+
+      - name: Install jazzy
+        run: |
+          gem install --no-document jazzy
+          gem install --no-document xcpretty
+
+      - name: Setup build environment
+        run: |
+          set -x
+          rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+
+          # For some reason everything works fine if we use the host clang,
+          # not the Xcode-bundled clang.
+          echo '[target.aarch64-apple-darwin]' >> ~/.cargo/config.toml
+          echo 'linker = "/usr/bin/cc"' >> ~/.cargo/config.toml
+
+      - name: Build XCFramework
+        run: |
+          make build-xcframework
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Glean.xcframework.zip
+          path: Glean.xcframework.zip
+
+      - name: Upload XCFramework to release
+        env:
+          VERSION_TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$VERSION_TAG" Glean.xcframework.zip
+
+  publish-glean-swift:
+    runs-on: ubuntu-latest
+    needs: [publish-ios-framework]
+    steps:
+      - *checkout
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: Glean.xcframework.zip
+          skip-decompress: true
+
+      - name: Release glean-swift
+        env:
+          VERSION_TAG: ${{ github.ref_name }}
+          GLEAN_SWIFT_GITHUB_TOKEN: ${{ secrets.GLEAN_SWIFT_GITHUB_TOKEN }}
+        run: |
+          git config --global user.email "jrediger@mozilla.com"
+          git config --global user.name "Glean automated release"
+
+          ./bin/publish-glean-swift.sh "${VERSION_TAG}"
+
+  sbom:
+    name: SBOM
+    permissions:
+      actions: read   # Required by anchore/sbom-action to read workflow run context.
+      contents: write # Required to upload the SBOM as a release asset.
+    uses: mozilla/ssdlc-actions/.github/workflows/ssdlc-sbom.yml@0980dd214a92599ecdb67ad30f7086b508a3f825 # untagged; pinned to a main-branch commit
+    with:
+      sbom_name: glean-${{ github.ref_name || github.sha }}
