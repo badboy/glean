@@ -280,6 +280,32 @@ jobs:
 
           .\venv\Scripts\py.test -v glean-core\python\tests
 
+  test-python-alpine:
+    runs-on: ubuntu-latest
+    steps:
+      - *checkout
+
+      - uses: jirutka/setup-alpine@v1
+        with:
+          branch: latest-stable
+          packages: |
+            apk add curl git gcc musl-dev libffi-dev openssh-client make openssl-dev rustup python3
+
+      - name: Setup Rust
+        shell: alpine.sh {0}
+        run: |
+          set -x
+          export RUSTUP_HOME=~/alpine-rustup
+          rustup-init --profile minimal --default-toolchain stable -y
+          rustc -vV
+          cargo -vV
+
+      - name: Python tests
+        shell: alpine.sh {0}
+        run: |
+          export RUSTUP_HOME=~/alpine-rustup
+          make test-python
+
   packaging-python-aarch64:
     runs-on: ubuntu-latest
     needs: [decide-runs]
@@ -641,6 +667,7 @@ jobs:
       - test-kotlin
       - test-python
       - test-python
+      - test-python-alpine
       - test-rust
       - test-swift
       - packaging-python-aarch64
