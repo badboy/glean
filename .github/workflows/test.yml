@@ -289,7 +289,7 @@ jobs:
         with:
           branch: latest-stable
           packages: |
-            apk add curl git gcc musl-dev libffi-dev openssh-client make openssl-dev rustup python3
+            curl git gcc musl-dev libffi-dev openssh-client make openssl-dev rustup python3
 
       - name: Setup Rust
         shell: alpine.sh {0}
