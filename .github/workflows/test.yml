@@ -116,7 +116,7 @@ jobs:
           echo "metrics-changed=$METRICS_CHANGED" >> $GITHUB_OUTPUT
           echo "python-changed=$PYTHON_CHANGED" >> $GITHUB_OUTPUT
           echo "rust-changed=$RUST_CHANGED" >> $GITHUB_OUTPUT
-          echo "swift-changed=$SWIFT_CHANGED" >> $GITHUB_OUTPUT
+          echo "swift-changed=true" >> $GITHUB_OUTPUT
           echo "yaml-changed=$YAML_CHANGED" >> $GITHUB_OUTPUT
 
   test-rust:
