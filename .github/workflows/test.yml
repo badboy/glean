@@ -409,6 +409,14 @@ jobs:
         run: |
           make test-swift
 
+      - name: Build XCFramework archive
+        run: |
+          make build-xcframework
+
+      - name: Test sample app
+        run: |
+          make test-ios-sample
+
   test-kotlin:
     runs-on: ubuntu-latest
     needs: [decide-runs]
